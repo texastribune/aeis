@@ -299,6 +299,7 @@ def analyze_columns(aeis_file, metadata=None):
     columns = get_columns(aeis_file, metadata=metadata)
 
     analyzer = globals()['analyze_%s' % aeis_file.root_name]
+    analyzed_columns = set()
     for column in sorted(columns):
         position = 0
         remainder = column
@@ -335,8 +336,13 @@ def analyze_columns(aeis_file, metadata=None):
             message += '\nMetadata: %r' % pretty_metadata
             raise ValueError(message)
 
+        # Print analysis
         print '{}.{}.{}'.format(aeis_file.base_name, aeis_file.year, column)
         pprint.pprint(analysis)
+
+        # Report progress
+        analyzed_columns.add(column)
+        print '{}/{}...'.format(len(analyzed_columns), len(metadata))
 
 
 def get_or_create_metadata(root):
