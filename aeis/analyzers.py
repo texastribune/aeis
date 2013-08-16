@@ -26,7 +26,7 @@ def analyzer(analyze_function):
         # Some columns are words that signify a special field
         if column.lower() in ('campus', 'district', 'region'):
             yield column, {'field': 'key'}
-        elif column.lower() == 'campname':
+        elif column.lower() in ('campname', 'distname'):
             yield column, {'field': 'name'}
         elif column.lower() == 'class':
             yield column, {'field': 'school-type'}
@@ -51,7 +51,9 @@ def analyzer(analyze_function):
             # characters and raise an exception.
             remainder = column[1:]
 
-            # Now there are some possible level-specific special fields
+            # Now there are some possible level-specific special fields,
+            # like supplemental accountability rating acknowledgments
+            # at the campus and district levels.
             if remainder.lower() == 'suprate':
                 yield remainder, {
                     'field': ('accountability-rating/'
@@ -190,6 +192,12 @@ def analyze_othr(aeis_file, remainder):
         yield 'R', {'measure': 'percent'}
     elif remainder == 'R':
         yield 'R', {'measure': 'rate'}
+
+
+@analyzer
+def analyze_ref(aeis_file, remainder):
+    # Nothing here... it's all parsed by the base analyzer.
+    yield '', {}
 
 
 def analyze_columns(aeis_file, metadata=None):
