@@ -70,10 +70,14 @@ def analyzer(analyze_function):
             # Expect a final possible 1-digit measure code
             if remainder == 'T':
                 yield 'T', {'measure': 'total'}
+            elif remainder == 'C':
+                yield 'C', {'measure': 'count'}
             elif remainder == 'P':
                 yield 'P', {'measure': 'percent'}
             elif remainder == 'K':
                 yield 'K', {'measure': 'per-pupil'}
+            elif remainder == 'A':
+                yield 'A', {'measure': 'average'}
 
     return analyze
 
@@ -198,6 +202,96 @@ def analyze_othr(aeis_file, remainder):
 def analyze_ref(aeis_file, remainder):
     # Nothing here... it's all parsed by the base analyzer.
     yield '', {}
+
+
+@analyzer
+def analyze_staf(aeis_file, remainder):
+    if remainder.startswith('PS'):
+        yield 'PS', {}  # ???
+        remainder = remainder[2:]
+
+    # Next there might be a summary statistic
+    if remainder.startswith('TEXP'):
+        yield 'TEXP', {'field': 'teacher-years-of-experience'}
+        remainder = remainder[4:]
+    elif remainder.startswith('TTEN'):
+        yield 'TTEN', {'field': 'teacher-tenure'}
+    elif remainder.startswith('TKIDR'):
+        yield 'TKIDR', {'field': 'student-teacher-ratio'}
+    else:
+        # Or a 3-digit group code...
+        if remainder.startswith('AMI'):
+            yield 'AMI', {'group': 'minority'}
+        elif remainder.startswith('ATO'):
+            yield 'ATO', {'group': 'full-time-eqivalent'}
+        elif remainder.startswith('ETO'):
+            yield 'ETO', {'group': 'educational-aides'}
+        elif remainder.startswith('PTO'):
+            yield 'PTO', {'group': 'professional-staff'}
+        elif remainder.startswith('STO'):
+            yield 'STO', {'group': 'campus-administrators'}
+        elif remainder.startswith('TTO'):
+            yield 'TTO', {'group': 'teachers'}
+        elif remainder.startswith('UTO'):
+            yield 'UTO', {'group': 'professional-support'}
+
+        # Or a 3-digit teacher experience code...
+        elif remainder.startswith('T00'):
+            yield 'T00', {'teacher-experience': 'zero-years'}
+        elif remainder.startswith('T01'):
+            yield 'T01', {'teacher-experience': 'one-to-five-years'}
+        elif remainder.startswith('T06'):
+            yield 'T06', {'teacher-experience': 'six-to-ten-years'}
+        elif remainder.startswith('T11'):
+            yield 'T11', {'teacher-experience': 'eleven-to-twenty-years'}
+        elif remainder.startswith('T20'):
+            yield 'T20', {'teacher-experience': 'twenty-or-more-years'}
+
+        # Or a 3-digit teacher program code...
+        elif remainder.startswith('TRE'):
+            yield 'TRE', {'teacher-program': 'regular'}
+        elif remainder.startswith('TVO'):
+            yield 'TVO', {'teacher-program': 'vocational'}
+        elif remainder.startswith('TBI'):
+            yield 'TBI', {'teacher-program': 'bilingual-esi'}
+        elif remainder.startswith('TCO'):
+            yield 'TCO', {'teacher-program': 'compensatory'}
+        elif remainder.startswith('TGI'):
+            yield 'TGI', {'teacher-program': 'gifted-and-talented'}
+        elif remainder.startswith('TSP'):
+            yield 'TSP', {'teacher-program': 'special-education'}
+        elif remainder.startswith('TOP'):
+            yield 'TOP', {'teacher-program': 'other'}
+
+        # Or a 3-digit race code
+        elif remainder.startswith('TWH'):
+            yield 'TWH', {'teacher-race': 'white'}
+        elif remainder.startswith('THI'):
+            yield 'THI', {'teacher-race': 'hispanic'}
+        elif remainder.startswith('TBL'):
+            yield 'TBL', {'teacher-race': 'black'}
+        elif remainder.startswith('TNA'):
+            yield 'TNA', {'teacher-race': 'native-american'}
+        elif remainder.startswith('TPI'):
+            yield 'TPI', {'teacher-race': 'pacific-islander'}
+        elif remainder.startswith('TOE'):
+            yield 'TOE', {'teacher-race': 'other'}
+
+        # Or a 3-digit gender code
+        elif remainder.startswith('TFE'):
+            yield 'TFE', {'teacher-gender': 'female'}
+        elif remainder.startswith('TMA'):
+            yield 'TMA', {'teacher-gender': 'male'}
+
+        remainder = remainder[3:]
+
+    # Then a 1-digit field signifier
+    if remainder.startswith('F'):
+        yield 'F', {'field': 'staff'}
+    elif remainder.startswith('S'):
+        yield 'S', {'field': 'salary'}
+
+    remainder = remainder[1:]
 
 
 def analyze_columns(aeis_file, metadata=None):
