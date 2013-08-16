@@ -203,8 +203,10 @@ def analyze_columns(aeis_file, metadata=None):
         generator = analyzer(aeis_file, remainder)
         pretty_metadata = pprint.pformat(metadata.get(column))
 
+        analysis = {}
         for partial, data in generator:
-            print repr(partial), data
+            # print repr(partial), data
+            analysis.update(data)
 
             # Determine continuation from the partial value
             if partial == remainder:
@@ -230,6 +232,9 @@ def analyze_columns(aeis_file, metadata=None):
             message %= (remainder, column, position)
             message += '\nMetadata: %r' % pretty_metadata
             raise ValueError(message)
+
+        print '{}.{}.{}'.format(aeis_file.base_name, aeis_file.year, column)
+        pprint.pprint(analysis)
 
 
 def get_or_create_metadata(root):
