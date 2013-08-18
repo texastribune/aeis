@@ -294,6 +294,17 @@ def analyze_staf(aeis_file, remainder):
     remainder = remainder[1:]
 
 
+@analyzer
+def analyze_stud(aeis_file, remainder):
+    if remainder.startswith('PEG'):
+        yield 'PEG', {'field': 'graduates'}
+
+    remainer = remainder[3:]
+
+    if remainder.startswith('ADV'):
+        yield 'ADV', {'graduates/distinction': 'advanced-seals-on-diploma'}
+
+
 def analyze_columns(aeis_file, metadata=None):
     metadata = metadata if metadata is not None else {}
     columns = get_columns(aeis_file, metadata=metadata)
