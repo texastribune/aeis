@@ -196,5 +196,5 @@ def scrape_2012_references(data_dir):
 if __name__ == '__main__':
     data_dir = sys.argv[1]
     scrape_pre_2012(data_dir)
-    # scrape_2012(data_dir)
-    # scrape_2012_references(data_dir)
+    scrape_2012(data_dir)
+    scrape_2012_references(data_dir)
