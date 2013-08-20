@@ -362,6 +362,40 @@ def analyze_stud(aeis_file, remainder):
             yield 'R', {'measure': 'average'}
 
 
+    dsl = {r'PE(G|M|R|T)': [
+        {'G': {'field': 'graduates', 'program': 'regular'},
+         'M': {'field': 'enrollment', 'group': 'mobile'},
+         'T': {'field': 'enrollment'},
+         'R': {'field': 'retention'}},
+        {'[A-Z]{3}': [
+            {# Graduation
+             'ADV': {'graduate-distinction': 'advanced-seals-on-diploma'},
+             # Program
+             'SPE': {'program': 'special'},
+             'BIL': {'program': 'bilingual'},
+             'VOC': {'program': 'vocational'},
+             # Group
+             'ALL': {'group': 'all'},
+             'ECO', {'group': 'economically-disadvantaged'},
+             'GIF', {'group': 'gifted-and-talented'},
+             'LEP', {'group': 'limited-english-proficient'},
+             # Race
+             'BLA': {'race': 'black'},
+             'HIS': {'race': 'hispanic'},
+             'OTH': {'race': 'other'},
+             'WHI': {'race': 'white'}}],
+         '(?<group>G|R|S)((?P<grade>\d\d)|(?<grade_code>EE|PK|KI|KN))': [
+            {'group': {'R': {'program': 'regular'},
+                       'S': {'program': 'special'},
+                       'G': {}},
+             'grade': int,
+             'group_code': {'KI': {'grade': 'kindergarten'},
+                            'KN': {'grade': 'kindergarten'},
+                            'EE': {'grade': 'early-education'}}},
+            {'R': [
+                {'R': 'measure': 'average'}]}]}]}
+
+
 def analyze_columns(aeis_file, metadata=None):
     metadata = metadata if metadata is not None else {}
     columns = list(get_columns(aeis_file, metadata=metadata))
