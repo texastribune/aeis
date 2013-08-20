@@ -297,12 +297,69 @@ def analyze_staf(aeis_file, remainder):
 @analyzer
 def analyze_stud(aeis_file, remainder):
     if remainder.startswith('PEG'):
-        yield 'PEG', {'field': 'graduates'}
+        yield 'PEG', {'field': 'graduates', 'program': 'regular'}
+    elif remainder.startswith('PEM'):
+        yield 'PEM', {'field': 'students', 'group': 'mobile'}
+    elif remainder.startswith('PER'):
+        yield 'PER', {'field': 'retention'}
+    elif remainder.startswith('PET'):
+        yield 'PET', {'field': 'enrollment'}
 
-    remainer = remainder[3:]
+    remainder = remainder[3:]
 
+    # Distinction
     if remainder.startswith('ADV'):
         yield 'ADV', {'graduates/distinction': 'advanced-seals-on-diploma'}
+
+    # Program override
+    elif remainder.startswith('SPE'):
+        yield 'SPE', {'program': 'special'}
+    elif remainder.startswith('BIL'):
+        yield 'BIL', {'program': 'bilingual'}
+    elif remainder.startswith('VOC'):
+        yield 'VOC', {'program': 'vocational'}
+
+    # Group
+    elif remainder.startswith('ALL'):
+        yield 'ALL', {'group': 'all'}
+    elif remainder.startswith('ECO'):
+        yield 'ECO', {'group': 'economically-disadvantaged'}
+    elif remainder.startswith('GIF'):
+        yield 'GIF', {'group': 'gifted-and-talented'}
+    elif remainder.startswith('LEP'):
+        yield 'LEP', {'group': 'limited-english-proficient'}
+
+    # Race
+    elif remainder.startswith('BLA'):
+        yield 'BLA', {'race': 'black'}
+    elif remainder.startswith('HIS'):
+        yield 'HIS', {'race': 'hispanic'}
+    elif remainder.startswith('OTH'):
+        yield 'OTH', {'race': 'other'}
+    elif remainder.startswith('WHI'):
+        yield 'WHI', {'race': 'white'}
+
+    # Program by grade level
+    elif re.match(r'(G|R|S)(\d\d|EE|PK|KI|KN)', remainder):
+        if remainder[0] == 'R':
+            yield 'R', {'program': 'regular'}
+        elif remainder[0] == 'S':
+            yield 'S', {'program': 'special'}
+        elif remainder[0] == 'G':
+            yield 'G', {}
+
+        if remainder[1:3] in ('KI', 'KN'):
+            yield remainder[1:3], {'grade': 'kindergarten'}
+        elif remainder[1:3] == 'PK':
+            yield 'PK', {'grade': 'pre-kindergarten'}
+        elif remainder[1:3] == 'EE':
+            yield 'EE', {'grade': 'early-education'}
+        else:
+            yield remainder[1:3], {'grade': int(remainder[1:3])}
+
+        # For some reason, the last "R" means average in this context
+        if remainder[3:] == 'R':
+            yield 'R', {'measure': 'average'}
 
 
 def analyze_columns(aeis_file, metadata=None):
