@@ -364,7 +364,7 @@ def analyze_stud(aeis_file, remainder):
 
 def analyze_columns(aeis_file, metadata=None):
     metadata = metadata if metadata is not None else {}
-    columns = get_columns(aeis_file, metadata=metadata)
+    columns = list(get_columns(aeis_file, metadata=metadata))
 
     analyzer = globals()['analyze_%s' % aeis_file.root_name]
     analyzed_columns = set()
@@ -374,9 +374,11 @@ def analyze_columns(aeis_file, metadata=None):
         generator = analyzer(aeis_file, remainder)
         pretty_metadata = pprint.pformat(metadata.get(column))
 
+        # Print the current column
+        print '{}.{}.{}'.format(aeis_file.base_name, aeis_file.year, column)
+
         analysis = {}
         for partial, data in generator:
-            # print repr(partial), data
             analysis.update(data)
 
             # Determine continuation from the partial value
@@ -405,12 +407,11 @@ def analyze_columns(aeis_file, metadata=None):
             raise ValueError(message)
 
         # Print analysis
-        print '{}.{}.{}'.format(aeis_file.base_name, aeis_file.year, column)
         pprint.pprint(analysis)
 
         # Report progress
         analyzed_columns.add(column)
-        print '{}/{}...'.format(len(analyzed_columns), len(metadata))
+        print '{}/{}...'.format(len(analyzed_columns), len(columns))
 
 
 def get_or_create_metadata(root):
