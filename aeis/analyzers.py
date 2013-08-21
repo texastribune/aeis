@@ -376,9 +376,9 @@ def analyze_stud(aeis_file, remainder):
              'VOC': {'program': 'vocational'},
              # Group
              'ALL': {'group': 'all'},
-             'ECO', {'group': 'economically-disadvantaged'},
-             'GIF', {'group': 'gifted-and-talented'},
-             'LEP', {'group': 'limited-english-proficient'},
+             'ECO': {'group': 'economically-disadvantaged'},
+             'GIF': {'group': 'gifted-and-talented'},
+             'LEP': {'group': 'limited-english-proficient'},
              # Race
              'BLA': {'race': 'black'},
              'HIS': {'race': 'hispanic'},
@@ -393,7 +393,7 @@ def analyze_stud(aeis_file, remainder):
                             'KN': {'grade': 'kindergarten'},
                             'EE': {'grade': 'early-education'}}},
             {'R': [
-                {'R': 'measure': 'average'}]}]}]}
+                {'R': {'measure': 'average'}}]}]}]}
 
 
 def analyze_columns(aeis_file, metadata=None):
