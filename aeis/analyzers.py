@@ -1,7 +1,9 @@
+import itertools
 import os
 import pprint
 import re
 import shelve
+import sre_constants
 import sys
 
 from .files import get_files
@@ -294,106 +296,156 @@ def analyze_staf(aeis_file, remainder):
     remainder = remainder[1:]
 
 
+def analyzer_dsl(get_dsl):
+    def analyze(aeis_file, remainder):
+        tree = get_dsl(aeis_file)
+        items = tree.iteritems()
+
+        # We will continue to walk our DSL tree until we've parsed the
+        # full remainder or we run out of transitions.
+        while remainder:
+            try:
+                transition, subtree = next(items)
+            except StopIteration:
+                break
+
+            # Get a match object for a possible regex transition
+            try:
+                match = re.match(r'^' + transition, remainder, re.X)
+            except sre_constants.error:
+                raise ValueError(
+                    'r"{}" is not a valid regex'.format(transition)
+                )
+
+            # First try to transition via literal prefix
+            if remainder.startswith(transition):
+                # In the case of literal transitions, the metadata will
+                # always be the only subtree, or it will be the first
+                # subtree, because there is only a single value covered
+                # by the transition.
+                partial = transition
+                if isinstance(subtree, dict):
+                    metadata, subtrees = subtree, []
+                else:
+                    metadata, subtrees = subtree[0], subtree[1:]
+                yield partial, metadata
+            # Then fall back to a regex transition
+            elif match:
+                # Yield metadata from first item of subtree
+                metadata, subtrees = subtree[0], subtree[1:]
+                sorted_groups = sorted(
+                    match.re.groupindex.items(),
+                    key=lambda ko: ko[1]
+                )
+                for key, _ in sorted_groups:
+                    # Extract the partial from the match in the order
+                    # it was parsed. Depending on the expression, the
+                    # group may not have matched, in which case we can
+                    # ignore it and continue on.
+                    partial = match.group(key)
+                    if partial is None:
+                        continue
+
+                    # Extract metadata using the partial match, either
+                    # by getting it from a dictionary of metadata or
+                    # by transforming it with a callable.
+                    dict_or_callable = metadata[key]
+                    if callable(dict_or_callable):
+                        yield partial, {key: dict_or_callable(partial)}
+                    else:
+                        try:
+                            yield partial, dict_or_callable[partial]
+                        except KeyError:
+                            # Stop parsing here so that the partial
+                            # error will bubble up.
+                            break
+
+                # Finally set partial to the full match text
+                partial = match.group(0)
+            else:
+                # We cannot transition to the current subtree, so
+                # continue to the next one.
+                continue
+
+            # Then traverse the remaining subtrees
+            subitems = itertools.imap(lambda d: d.items(), subtrees)
+            items = itertools.chain(*subitems)
+
+            # Trim the partial string that we analyzed
+            remainder = remainder.replace(partial, '', 1)
+
+    return analyze
+
+
 @analyzer
-def analyze_stud(aeis_file, remainder):
-    if remainder.startswith('PEG'):
-        yield 'PEG', {'field': 'graduates', 'program': 'regular'}
-    elif remainder.startswith('PEM'):
-        yield 'PEM', {'field': 'students', 'group': 'mobile'}
-    elif remainder.startswith('PER'):
-        yield 'PER', {'field': 'retention'}
-    elif remainder.startswith('PET'):
-        yield 'PET', {'field': 'enrollment'}
+@analyzer_dsl
+def analyze_stud(aeis_file):
+    graduate_distinctions = {
+        'ADV': {'graduate-distinction': 'advanced-seals-on-diploma'},
+    }
 
-    remainder = remainder[3:]
+    groups = {
+        'ALL': {'group': 'all'},
+        'ECO': {'group': 'economically-disadvantaged'},
+        'GIF': {'group': 'gifted-and-talented'},
+        'LEP': {'group': 'limited-english-proficient'},
+    }
 
-    # Distinction
-    if remainder.startswith('ADV'):
-        yield 'ADV', {'graduates/distinction': 'advanced-seals-on-diploma'}
+    programs = {
+        'SPE': {'program': 'special'},
+        'BIL': {'program': 'bilingual'},
+        'VOC': {'program': 'vocational'},
+    }
 
-    # Program override
-    elif remainder.startswith('SPE'):
-        yield 'SPE', {'program': 'special'}
-    elif remainder.startswith('BIL'):
-        yield 'BIL', {'program': 'bilingual'}
-    elif remainder.startswith('VOC'):
-        yield 'VOC', {'program': 'vocational'}
+    races = {
+        'BLA': {'race': 'black'},
+        'HIS': {'race': 'hispanic'},
+        'OTH': {'race': 'other'},
+        'WHI': {'race': 'white'},
+    }
 
-    # Group
-    elif remainder.startswith('ALL'):
-        yield 'ALL', {'group': 'all'}
-    elif remainder.startswith('ECO'):
-        yield 'ECO', {'group': 'economically-disadvantaged'}
-    elif remainder.startswith('GIF'):
-        yield 'GIF', {'group': 'gifted-and-talented'}
-    elif remainder.startswith('LEP'):
-        yield 'LEP', {'group': 'limited-english-proficient'}
+    grades_by_program = {
+        r'(?P<group>G|R|S)((?P<grade>\d\d)|(?P<code>EE|PK|KI|KN))': (
+             {
+                'group': {
+                    'G': {},  # Stand-in for "Grade"
+                    'R': {'program': 'regular'},
+                    'S': {'program': 'special'},
+                },
+                'grade': int,
+                'code': {
+                    'EE': {'grade': 'early-education'},
+                    'PK': {'grade': 'pre-kindergarten'},
+                    'KI': {'grade': 'kindergarten'},
+                    'KN': {'grade': 'kindergarten'},
+                }
+            },
+            # For some reason, the last "R" means average here
+            {'R': {'measure': 'average'}}
+        )
+    }
 
-    # Race
-    elif remainder.startswith('BLA'):
-        yield 'BLA', {'race': 'black'}
-    elif remainder.startswith('HIS'):
-        yield 'HIS', {'race': 'hispanic'}
-    elif remainder.startswith('OTH'):
-        yield 'OTH', {'race': 'other'}
-    elif remainder.startswith('WHI'):
-        yield 'WHI', {'race': 'white'}
-
-    # Program by grade level
-    elif re.match(r'(G|R|S)(\d\d|EE|PK|KI|KN)', remainder):
-        if remainder[0] == 'R':
-            yield 'R', {'program': 'regular'}
-        elif remainder[0] == 'S':
-            yield 'S', {'program': 'special'}
-        elif remainder[0] == 'G':
-            yield 'G', {}
-
-        if remainder[1:3] in ('KI', 'KN'):
-            yield remainder[1:3], {'grade': 'kindergarten'}
-        elif remainder[1:3] == 'PK':
-            yield 'PK', {'grade': 'pre-kindergarten'}
-        elif remainder[1:3] == 'EE':
-            yield 'EE', {'grade': 'early-education'}
-        else:
-            yield remainder[1:3], {'grade': int(remainder[1:3])}
-
-        # For some reason, the last "R" means average in this context
-        if remainder[3:] == 'R':
-            yield 'R', {'measure': 'average'}
-
-
-    dsl = {r'PE(G|M|R|T)': [
-        {'G': {'field': 'graduates', 'program': 'regular'},
-         'M': {'field': 'enrollment', 'group': 'mobile'},
-         'T': {'field': 'enrollment'},
-         'R': {'field': 'retention'}},
-        {'[A-Z]{3}': [
-            {# Graduation
-             'ADV': {'graduate-distinction': 'advanced-seals-on-diploma'},
-             # Program
-             'SPE': {'program': 'special'},
-             'BIL': {'program': 'bilingual'},
-             'VOC': {'program': 'vocational'},
-             # Group
-             'ALL': {'group': 'all'},
-             'ECO', {'group': 'economically-disadvantaged'},
-             'GIF', {'group': 'gifted-and-talented'},
-             'LEP', {'group': 'limited-english-proficient'},
-             # Race
-             'BLA': {'race': 'black'},
-             'HIS': {'race': 'hispanic'},
-             'OTH': {'race': 'other'},
-             'WHI': {'race': 'white'}}],
-         '(?<group>G|R|S)((?P<grade>\d\d)|(?<grade_code>EE|PK|KI|KN))': [
-            {'group': {'R': {'program': 'regular'},
-                       'S': {'program': 'special'},
-                       'G': {}},
-             'grade': int,
-             'group_code': {'KI': {'grade': 'kindergarten'},
-                            'KN': {'grade': 'kindergarten'},
-                            'EE': {'grade': 'early-education'}}},
-            {'R': [
-                {'R': 'measure': 'average'}]}]}]}
+    return {
+        # Transition
+        r'(?P<field>PEG|PEM|PER|PET)': (
+            # Metadata
+            {
+                'field': {
+                    'PEG': {'field': 'graduates', 'program': 'regular'},
+                    'PEM': {'field': 'enrollment', 'group': 'mobile'},
+                    'PER': {'field': 'retention'},
+                    'PET': {'field': 'enrollment'},
+                },
+            },
+            # Remainders
+            graduate_distinctions,
+            groups,
+            programs,
+            races,
+            grades_by_program,
+            # TODO: What if "94" came after any of these?
+        )
+    }
 
 
 def analyze_columns(aeis_file, metadata=None):
