@@ -409,7 +409,7 @@ def analyze_columns(aeis_file, metadata=None):
         pretty_metadata = pprint.pformat(metadata.get(column))
 
         # Print the current column
-        print '{}.{}.{}'.format(aeis_file.base_name, aeis_file.year, column)
+        print '{}/{}:{}'.format(aeis_file.year, aeis_file.base_name, column)
 
         analysis = {}
         for partial, data in generator:
