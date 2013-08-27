@@ -533,7 +533,15 @@ def analyze_columns(aeis_file, metadata=None):
     metadata = metadata if metadata is not None else {}
     columns = list(get_columns(aeis_file, metadata=metadata))
 
-    analyzer = globals()['analyze_%s' % aeis_file.root_name]
+    # Get an appropriate analyzer for this file
+    analyzer_name = 'analyze_%s' % aeis_file.root_name
+    try:
+        analyzer = globals()[analyzer_name]
+    except KeyError:
+        raise RuntimeError(
+            'You must implement an analyzer named "%s" to parse "%s"' % (
+                analyzer_name, aeis_file))
+
     analyzed_columns = set()
     for column in sorted(columns):
         position = 0
