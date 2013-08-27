@@ -511,6 +511,11 @@ def analyze_taas(aeis_file):
     )}
 
 
+analyze_tasa = analyze_taas
+analyze_tasb = analyze_taas
+analyze_tasc = analyze_taas
+
+
 def analyze_columns(aeis_file, metadata=None):
     metadata = metadata if metadata is not None else {}
     columns = list(get_columns(aeis_file, metadata=metadata))
