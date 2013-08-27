@@ -80,6 +80,8 @@ def analyzer(analyze_function):
                 yield 'K', {'measure': 'per-pupil'}
             elif remainder == 'A':
                 yield 'A', {'measure': 'average'}
+            elif remainder == 'R':
+                yield 'R', {'measure': 'rate'}
 
     return analyze
 
