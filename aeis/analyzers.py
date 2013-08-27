@@ -21,6 +21,17 @@ def parse_two_digit_year(partial):
         return 2000 + years
 
 
+def parse_one_digit_grade(grade):
+    if grade == '0':
+        return '3-8-and-10'
+    if grade == 'Z':
+        return '4-8-and-10'
+    elif grade == 'X':
+        return '10'
+    else:
+        return str(int(grade))
+
+
 def analyzer(analyze_function):
     def analyze(aeis_file, column):
         yield '', {'version': aeis_file.year}
@@ -462,6 +473,58 @@ def analyze_stud(aeis_file):
             races,
             grades_by_program,
             # TODO: What if "94" came after any of these?
+        )
+    }
+
+
+@analyzer
+@analyzer_dsl
+def analyze_taas(aeis_file):
+    return {
+        r'(?P<group>[A-Z])': (
+            {
+                'group': {
+                    # Groups
+                    'A': {'group': 'all'},
+                    'E': {'group': 'economically-disadvantaged'},
+                    'S': {'group': 'special-education'},
+                    # Genders
+                    'F': {'gender': 'female'},
+                    'M': {'gender': 'male'},
+                    # Races
+                    'B': {'race': 'black'},
+                    'H': {'race': 'hispanic'},
+                    'O': {'race': 'other'},
+                    'W': {'race': 'white'},
+                },
+            },
+            {
+                r'(?P<grade>[0-8]|X|Z)': (
+                    {'grade': parse_one_digit_grade},
+                    {
+                        r'(?P<field>T)': (
+                            {'field': {'T': 'taas/passing'}},
+                            {
+                                r'(?P<test>A|M|R|W)': (
+                                    {
+                                        'test': {
+                                            'A': {'test': 'all'},
+                                            'M': {'test': 'math'},
+                                            'R': {'test': 'reading'},
+                                            'W': {'test': 'writing'},
+                                        }
+                                    },
+                                    {
+                                        r'(?P<year>\d\d)': {
+                                            'year': parse_two_digit_year,
+                                        },
+                                    }
+                                )
+                            }
+                        )
+                    }
+                )
+            }
         )
     }
 
