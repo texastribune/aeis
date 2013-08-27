@@ -32,6 +32,10 @@ def analyzer(analyze_function):
             yield column, {'field': 'name'}
         elif column.lower() == 'class':
             yield column, {'field': 'school-type'}
+        elif column.lower() == 'paircamp':
+            yield column, {'field': 'paired-campus/code'}
+        elif column.lower() == 'pairname':
+            yield column, {'field': 'paired-campus/name'}
         else:
             # Parse the first character to determine the level and
             # possibly the group-mean measure (for campus data).
