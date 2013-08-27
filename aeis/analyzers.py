@@ -359,7 +359,14 @@ def analyzer_dsl(get_dsl):
                         yield partial, {key: dict_or_callable(partial)}
                     else:
                         try:
-                            yield partial, dict_or_callable[partial]
+                            # If the metadata element is a string, just
+                            # assume the key we used to extract it.
+                            element = dict_or_callable[partial]
+                            if isinstance(element, basestring):
+                                yield partial, {key: element}
+                            else:
+                                # Otherwise assume we have a dict
+                                yield partial, element
                         except KeyError:
                             # Stop parsing here so that the partial
                             # error will bubble up.
