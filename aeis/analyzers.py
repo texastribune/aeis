@@ -101,45 +101,126 @@ def analyzer(analyze_function):
     return analyze
 
 
+def analyzer_dsl(get_dsl):
+    def analyze(aeis_file, remainder):
+        tree = get_dsl(aeis_file)
+        items = tree.iteritems()
+
+        # We will continue to walk our DSL tree until we've parsed the
+        # full remainder or we run out of transitions.
+        while remainder:
+            try:
+                transition, subtree = next(items)
+            except StopIteration:
+                break
+
+            # Get a match object for a possible regex transition
+            try:
+                match = re.match(r'^' + transition, remainder, re.X)
+            except sre_constants.error:
+                raise ValueError(
+                    'r"{}" is not a valid regex'.format(transition)
+                )
+
+            # First try to transition via literal prefix
+            if remainder.startswith(transition):
+                # In the case of literal transitions, the metadata will
+                # always be the only subtree, or it will be the first
+                # subtree, because there is only a single value covered
+                # by the transition.
+                partial = transition
+                if isinstance(subtree, dict):
+                    metadata, subtrees = subtree, []
+                else:
+                    metadata, subtrees = subtree[0], subtree[1:]
+                yield partial, metadata
+            # Then fall back to a regex transition
+            elif match:
+                # We can pass a dict as the terminal subtree
+                if isinstance(subtree, dict):
+                    metadata, subtrees = subtree, []
+                else:
+                    metadata, subtrees = subtree[0], subtree[1:]
+
+                # Yield metadata from first item of subtree
+                sorted_groups = sorted(
+                    match.re.groupindex.items(),
+                    key=lambda ko: ko[1]
+                )
+                for key, _ in sorted_groups:
+                    # Extract the partial from the match in the order
+                    # it was parsed. Depending on the expression, the
+                    # group may not have matched, in which case we can
+                    # ignore it and continue on.
+                    partial = match.group(key)
+                    if partial is None:
+                        continue
+
+                    # Extract metadata using the partial match, either
+                    # by getting it from a dictionary of metadata or
+                    # by transforming it with a callable.
+                    dict_or_callable = metadata[key]
+                    if callable(dict_or_callable):
+                        yield partial, {key: dict_or_callable(partial)}
+                    else:
+                        try:
+                            # If the metadata element is a string, just
+                            # assume the key we used to extract it.
+                            element = dict_or_callable[partial]
+                            if isinstance(element, basestring):
+                                yield partial, {key: element}
+                            else:
+                                # Otherwise assume we have a dict
+                                yield partial, element
+                        except KeyError:
+                            # Stop parsing here so that the partial
+                            # error will bubble up.
+                            break
+
+                # Finally set partial to the full match text
+                partial = match.group(0)
+            else:
+                # We cannot transition to the current subtree, so
+                # continue to the next one.
+                continue
+
+            # Then traverse the remaining subtrees
+            subitems = itertools.imap(lambda d: d.items(), subtrees)
+            items = itertools.chain(*subitems)
+
+            # Trim the partial string that we analyzed
+            remainder = remainder.replace(partial, '', 1)
+
+    return analyze
+
+
 @analyzer
-def analyze_fin(aeis_file, remainder):
-    # Analyze expenditure by function
-    if remainder.startswith('PFE'):
-        yield 'PFE', {'field': 'expenditure'}
-        remainder = remainder[3:]
-
-        # Now expect a 3-digit code
-        if remainder.startswith('ADI'):
-            yield 'ADI', {'function': 'administration/instructional'}
-        elif remainder.startswith('ADS'):
-            yield 'ADS', {'function': 'administration/campus'}
-        elif remainder.startswith('INR'):
-            yield 'INR', {'function': 'administration/instruction-related'}
-        elif remainder.startswith('INS'):
-            yield 'INS', {'function': 'instruction'}
-        elif remainder.startswith('OPR'):
-            yield 'OPR', {'function': 'operating'}
-        elif remainder.startswith('OTH'):
-            yield 'OTH', {'function': 'other'}
-
-    # Analyze expenditure by program
-    elif remainder.startswith('PFP'):
-        yield 'PFP', {'field': 'expenditure'}
-        remainder = remainder[3:]
-
-        # Expect a different 3-digit code
-        if remainder.startswith('BIL'):
-            yield 'BIL', {'program': 'bilingual'}
-        elif remainder.startswith('COM'):
-            yield 'COM', {'program': 'compensatory-expenditure'}
-        elif remainder.startswith('GIF'):
-            yield 'GIF', {'program': 'gifted-and-talented'}
-        elif remainder.startswith('REG'):
-            yield 'REG', {'program': 'regular'}
-        elif remainder.startswith('SPE'):
-            yield 'SPE', {'program': 'special'}
-        elif remainder.startswith('VOC'):
-            yield 'VOC', {'program': 'vocational'}
+@analyzer_dsl
+def analyze_fin(aeis_file):
+    return {
+        'PFE': (  # Expenditure by function
+            {'field': 'expenditure'},
+            {
+                'ADI': {'function': 'administration/instructional'},
+                'ADS': {'function': 'administration/campus'},
+                'INR': {'function': 'administration/instruction-related'},
+                'INS': {'function': 'instruction'},
+                'OPR': {'function': 'operating'},
+                'OTH': {'function': 'other'}
+            }
+        ),
+        'PFP': (  # Expenditure by program
+            {'field': 'expenditure'},
+            {
+                'BIL': {'program': 'bilingual'},
+                'COM': {'program': 'compensatory-expenditure'},
+                'GIF': {'program': 'gifted-and-talented'},
+                'REG': {'program': 'regular'},
+                'SPE': {'program': 'special'},
+                'VOC': {'program': 'vocational'}
+            }
+        )
+    }
 
 
 @analyzer
@@ -311,99 +392,6 @@ def analyze_staf(aeis_file, remainder):
         yield 'S', {'field': 'salary'}
 
     remainder = remainder[1:]
-
-
-def analyzer_dsl(get_dsl):
-    def analyze(aeis_file, remainder):
-        tree = get_dsl(aeis_file)
-        items = tree.iteritems()
-
-        # We will continue to walk our DSL tree until we've parsed the
-        # full remainder or we run out of transitions.
-        while remainder:
-            try:
-                transition, subtree = next(items)
-            except StopIteration:
-                break
-
-            # Get a match object for a possible regex transition
-            try:
-                match = re.match(r'^' + transition, remainder, re.X)
-            except sre_constants.error:
-                raise ValueError(
-                    'r"{}" is not a valid regex'.format(transition)
-                )
-
-            # First try to transition via literal prefix
-            if remainder.startswith(transition):
-                # In the case of literal transitions, the metadata will
-                # always be the only subtree, or it will be the first
-                # subtree, because there is only a single value covered
-                # by the transition.
-                partial = transition
-                if isinstance(subtree, dict):
-                    metadata, subtrees = subtree, []
-                else:
-                    metadata, subtrees = subtree[0], subtree[1:]
-                yield partial, metadata
-            # Then fall back to a regex transition
-            elif match:
-                # We can pass a dict as the terminal subtree
-                if isinstance(subtree, dict):
-                    metadata, subtrees = subtree, []
-                else:
-                    metadata, subtrees = subtree[0], subtree[1:]
-
-                # Yield metadata from first item of subtree
-                sorted_groups = sorted(
-                    match.re.groupindex.items(),
-                    key=lambda ko: ko[1]
-                )
-                for key, _ in sorted_groups:
-                    # Extract the partial from the match in the order
-                    # it was parsed. Depending on the expression, the
-                    # group may not have matched, in which case we can
-                    # ignore it and continue on.
-                    partial = match.group(key)
-                    if partial is None:
-                        continue
-
-                    # Extract metadata using the partial match, either
-                    # by getting it from a dictionary of metadata or
-                    # by transforming it with a callable.
-                    dict_or_callable = metadata[key]
-                    if callable(dict_or_callable):
-                        yield partial, {key: dict_or_callable(partial)}
-                    else:
-                        try:
-                            # If the metadata element is a string, just
-                            # assume the key we used to extract it.
-                            element = dict_or_callable[partial]
-                            if isinstance(element, basestring):
-                                yield partial, {key: element}
-                            else:
-                                # Otherwise assume we have a dict
-                                yield partial, element
-                        except KeyError:
-                            # Stop parsing here so that the partial
-                            # error will bubble up.
-                            break
-
-                # Finally set partial to the full match text
-                partial = match.group(0)
-            else:
-                # We cannot transition to the current subtree, so
-                # continue to the next one.
-                continue
-
-            # Then traverse the remaining subtrees
-            subitems = itertools.imap(lambda d: d.items(), subtrees)
-            items = itertools.chain(*subitems)
-
-            # Trim the partial string that we analyzed
-            remainder = remainder.replace(partial, '', 1)
-
-    return analyze
 
 
 @analyzer
