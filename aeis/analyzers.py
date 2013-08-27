@@ -331,8 +331,13 @@ def analyzer_dsl(get_dsl):
                 yield partial, metadata
             # Then fall back to a regex transition
             elif match:
+                # We can pass a dict as the terminal subtree
+                if isinstance(subtree, dict):
+                    metadata, subtrees = subtree, []
+                else:
+                    metadata, subtrees = subtree[0], subtree[1:]
+
                 # Yield metadata from first item of subtree
-                metadata, subtrees = subtree[0], subtree[1:]
                 sorted_groups = sorted(
                     match.re.groupindex.items(),
                     key=lambda ko: ko[1]
