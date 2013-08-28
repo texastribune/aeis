@@ -32,6 +32,15 @@ def parse_one_digit_grade(grade):
         return str(int(grade))
 
 
+def parse_two_digit_grade(grade):
+    if grade == 'KG':
+        return 'kindergarten'
+    elif grade == 'ME':
+        return 'mixed-elementary'
+    else:
+        return str(int(grade))
+
+
 def analyzer(analyze_function):
     def analyze(aeis_file, column):
         yield '', {'version': aeis_file.year}
@@ -408,93 +417,95 @@ def analyze_ref(aeis_file, remainder):
 
 
 @analyzer
-def analyze_staf(aeis_file, remainder):
-    if remainder.startswith('PS'):
-        yield 'PS', {}  # ???
-        remainder = remainder[2:]
+@analyzer_dsl
+def analyze_staf(aeis_file):
+    field_transitions = {
+        'F': {'status': 'full-time'},
+        'S': {'field': 'salary'}
+    }
 
-    # Next there might be a summary statistic
-    if remainder.startswith('TEXP'):
-        yield 'TEXP', {'field': 'teacher-years-of-experience'}
-        remainder = remainder[4:]
-    elif remainder.startswith('TTEN'):
-        yield 'TTEN', {'field': 'teacher-tenure'}
-    elif remainder.startswith('TKIDR'):
-        yield 'TKIDR', {'field': 'student-teacher-ratio'}
-    else:
-        # Or a 3-digit group code...
-        if remainder.startswith('AMI'):
-            yield 'AMI', {'group': 'minority'}
-        elif remainder.startswith('ATO'):
-            yield 'ATO', {'group': 'full-time-eqivalent'}
-        elif remainder.startswith('ETO'):
-            yield 'ETO', {'group': 'educational-aides'}
-        elif remainder.startswith('PTO'):
-            yield 'PTO', {'group': 'professional-staff'}
-        elif remainder.startswith('STO'):
-            yield 'STO', {'group': 'campus-administrators'}
-        elif remainder.startswith('TTO'):
-            yield 'TTO', {'group': 'teachers'}
-        elif remainder.startswith('UTO'):
-            yield 'UTO', {'group': 'professional-support'}
-
-        # Or a 3-digit teacher experience code...
-        elif remainder.startswith('T00'):
-            yield 'T00', {'teacher-experience': 'zero-years'}
-        elif remainder.startswith('T01'):
-            yield 'T01', {'teacher-experience': 'one-to-five-years'}
-        elif remainder.startswith('T06'):
-            yield 'T06', {'teacher-experience': 'six-to-ten-years'}
-        elif remainder.startswith('T11'):
-            yield 'T11', {'teacher-experience': 'eleven-to-twenty-years'}
-        elif remainder.startswith('T20'):
-            yield 'T20', {'teacher-experience': 'twenty-or-more-years'}
-
-        # Or a 3-digit teacher program code...
-        elif remainder.startswith('TRE'):
-            yield 'TRE', {'teacher-program': 'regular'}
-        elif remainder.startswith('TVO'):
-            yield 'TVO', {'teacher-program': 'vocational'}
-        elif remainder.startswith('TBI'):
-            yield 'TBI', {'teacher-program': 'bilingual-esi'}
-        elif remainder.startswith('TCO'):
-            yield 'TCO', {'teacher-program': 'compensatory'}
-        elif remainder.startswith('TGI'):
-            yield 'TGI', {'teacher-program': 'gifted-and-talented'}
-        elif remainder.startswith('TSP'):
-            yield 'TSP', {'teacher-program': 'special-education'}
-        elif remainder.startswith('TOP'):
-            yield 'TOP', {'teacher-program': 'other'}
-
-        # Or a 3-digit race code
-        elif remainder.startswith('TWH'):
-            yield 'TWH', {'teacher-race': 'white'}
-        elif remainder.startswith('THI'):
-            yield 'THI', {'teacher-race': 'hispanic'}
-        elif remainder.startswith('TBL'):
-            yield 'TBL', {'teacher-race': 'black'}
-        elif remainder.startswith('TNA'):
-            yield 'TNA', {'teacher-race': 'native-american'}
-        elif remainder.startswith('TPI'):
-            yield 'TPI', {'teacher-race': 'pacific-islander'}
-        elif remainder.startswith('TOE'):
-            yield 'TOE', {'teacher-race': 'other'}
-
-        # Or a 3-digit gender code
-        elif remainder.startswith('TFE'):
-            yield 'TFE', {'teacher-gender': 'female'}
-        elif remainder.startswith('TMA'):
-            yield 'TMA', {'teacher-gender': 'male'}
-
-        remainder = remainder[3:]
-
-    # Then a 1-digit field signifier
-    if remainder.startswith('F'):
-        yield 'F', {'field': 'staff'}
-    elif remainder.startswith('S'):
-        yield 'S', {'field': 'salary'}
-
-    remainder = remainder[1:]
+    return {
+        'PCT': (
+            {'field': 'class-size'},
+            {
+                'ENG': {'subject': 'english'},
+                'FLA': {'subject': 'foreign-language'},
+                'G(?P<grade>\w\w)': ({'grade': parse_two_digit_grade}),
+            }
+        ),
+        'PS': (
+            {'field': 'staff'},
+            {
+                'T': (
+                    {'role': 'teachers'},
+                    {'EXP': {'field': 'experience'}},
+                    {'KID': {'field': 'student-teacher-ratio'}},
+                    {'TEN': {'field': 'tenure'}},
+                    {
+                        '(?P<code>\w\w)': (
+                            {
+                                'code': {
+                                    # Total
+                                    'TO': {},
+                                    # Experience
+                                    '00': 'zero-years',
+                                    '01': 'one-to-five-years',
+                                    '06': 'six-to-ten-years',
+                                    '11': 'eleven-to-twenty-years',
+                                    '20': 'twenty-or-more-years',
+                                    # Program
+                                    'BI': {'program': 'bilingual'},
+                                    'CO': {'program': 'compensatory'},
+                                    'GI': {'program': 'gifted-and-talented'},
+                                    'OP': {'program': 'other'},
+                                    'RE': {'program': 'regular'},
+                                    'SP': {'program': 'special-education'},
+                                    # Vocational AKA Career & Tech
+                                    'VO': {'program': 'vocational'},
+                                    # Race
+                                    'BL': {'race': 'black'},
+                                    'WH': {'race': 'white'},
+                                    'HI': {'race': 'hispanic'},
+                                    'NA': {'race': 'native-american'},
+                                    'PA': {'race': 'asian-pacific-islander'},
+                                    'OE': {'race': 'other'},
+                                    # Gender
+                                    'FE': {'gender': 'female'},
+                                    'MA': {'gender': 'male'},
+                                    # Education
+                                    'BA': {'education': 'bachelors-degree'},
+                                },
+                            },
+                            field_transitions,
+                        )
+                    }
+                ),
+                '(?P<role>[A-Z])': (
+                    {
+                        'role': {
+                            'A': 'all',
+                            'E': 'educational-aides',
+                            'P': 'professionals',
+                            'S': 'school-administrators',
+                            'U': 'support',
+                        }
+                    },
+                    {
+                        '(?P<code>\w{2})': (
+                            {
+                                'code': {
+                                    'MI': {'group': 'minority'},
+                                    'TO': {'field': 'staff/total'},
+                                    'CO': {'program': 'compensatory'},
+                                }
+                            },
+                            field_transitions,
+                        )
+                    }
+                )
+            }
+        )
+    }
 
 
 @analyzer
