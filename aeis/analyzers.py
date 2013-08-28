@@ -419,17 +419,26 @@ def analyze_ref(aeis_file, remainder):
 @analyzer
 @analyzer_dsl
 def analyze_staf(aeis_file):
+    """
+    Info on permits: http://info.sos.state.tx.us/pls/pub/readtac$ext.TacPage?sl=R&app=9&p_dir=&p_rloc=&p_tloc=&p_ploc=&pg=1&p_tac=&ti=19&pt=7&ch=230&rl=77
+    Example permit form: file://localhost/Users/noah/Downloads/TCAPreaderadded.pdf
+    """
     field_transitions = {
         'F': {'status': 'full-time'},
-        'S': {'field': 'salary'}
+        'P': {'status': 'permit'},
+        'S': {'field': 'salary'},
     }
 
     return {
-        'PCT': (
-            {'field': 'class-size'},
+        '(?P<field>PCT|PET)': (
+            {'field': lambda field: 'class-size'},
             {
                 'ENG': {'subject': 'english'},
                 'FLA': {'subject': 'foreign-language'},
+                'MAT': {'subject': 'math'},
+                'SCI': {'subject': 'science'},
+                'SST': {'subject': 'social-studies'},
+                'ELE': {'grade': 'elementary'},
                 'G(?P<grade>\w\w)': ({'grade': parse_two_digit_grade}),
             }
         ),
@@ -441,6 +450,7 @@ def analyze_staf(aeis_file):
                     {'EXP': {'field': 'experience'}},
                     {'KID': {'field': 'student-teacher-ratio'}},
                     {'TEN': {'field': 'tenure'}},
+                    {'URN': {'field': 'turnover'}},
                     {
                         '(?P<code>\w\w)': (
                             {
@@ -472,8 +482,16 @@ def analyze_staf(aeis_file):
                                     # Gender
                                     'FE': {'gender': 'female'},
                                     'MA': {'gender': 'male'},
-                                    # Education
-                                    'BA': {'education': 'bachelors-degree'},
+                                    # Degree
+                                    'NO': {'degree': 'none'},
+                                    'BA': {'degree': 'bachelors'},
+                                    'MS': {'degree': 'masters'},
+                                    'PH': {'degree': 'phd'},
+                                    # Permit
+                                    'CA': {'permit': 'temporary-assignment'},
+                                    'ET': {'permit': 'emergency-teaching'},
+                                    'NR': {'permit': 'non-renewable'},
+                                    'SA': {'permit': 'special-assignment'},
                                 },
                             },
                             field_transitions,
@@ -484,10 +502,12 @@ def analyze_staf(aeis_file):
                     {
                         'role': {
                             'A': 'all',
+                            'C': 'central-administrators',
                             'E': 'educational-aides',
                             'P': 'professionals',
                             'S': 'school-administrators',
                             'U': 'support',
+                            'X': 'auxiliary',
                         }
                     },
                     {
