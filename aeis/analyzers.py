@@ -197,16 +197,38 @@ def analyzer_dsl(get_dsl):
 @analyzer
 @analyzer_dsl
 def analyze_fin(aeis_file):
+    # Primer on public schools finance and tax rates:
+    # http://www.lbb.state.tx.us/Other_Pubs/Financing%20Public%20Education%20in%20Texas%20Kindergarten%20through%20Grade%20Twelve%20Legislative%20Primer-Second%20Edition.pdf
     return {
+        'PFFENDT': {'field': 'fund-balance/ending'},
+        'PFFENDP': {'field': 'fund-balance/percent-of-expenditure'},
         'PFE': (  # Expenditure by function
             {'field': 'expenditure'},
+            {'OPR': {'field': 'expenditure/total', 'function': 'operating'}},
+            {'OPO': {'field': 'expenditure/total', 'object': 'operating'}},
             {
                 'ADI': {'function': 'administration/instructional'},
+                'ADC': {'function': 'administration/central'},
                 'ADS': {'function': 'administration/campus'},
+                'ALL': {'function': 'all'},
+                'CAP': {'function': 'capital-outlay'},
+                'COM': {'function': 'community-services'},
+                'DEB': {'function': 'debt-service'},
                 'INR': {'function': 'administration/instruction-related'},
                 'INS': {'function': 'instruction'},
-                'OPR': {'function': 'operating'},
-                'OTH': {'function': 'other'}
+                'NOF': {'function': 'non-operating'},
+                'OPF': {'function': 'operating'},
+                'OTH': {'function': 'other'},
+                'OTR': {'function': 'other'},
+                'SUP': {'function': 'support-services/student'},
+            },
+            {
+                'NOO': {'object-type': 'non-operating'},
+                'OOP': {'object-type': 'other-operating'},
+            },
+            {
+                'PAY': {'object': 'payroll'},
+                'PLA': {'object': 'plant-services'},
             }
         ),
         'PFP': (  # Expenditure by program
@@ -219,8 +241,89 @@ def analyze_fin(aeis_file):
                 'SPE': {'program': 'special'},
                 'VOC': {'program': 'vocational'}
             }
+        ),
+        'PFR': (
+            {'field': 'revenue'},
+            {
+                'ALL': {'source': 'all'},
+                'FED': {'source': 'federal'},
+                'LOC': {'source': 'local'},
+                'OTH': {'source': 'other-local-and-intermediate'},
+                'STA': {'source': 'state'},
+            }
+        ),
+        'PFCR': (
+            {'field': 'revenue/cooperative'},
+            {
+                'LO': {'source': 'local'},
+                'ST': {'source': 'state'},
+                'FE': {'source': 'federal'},
+                'TO': {'source': 'all'},
+            }
+        ),
+        'PFCE': (
+            {'field': 'expenditure/cooperative'},
+            {
+                'TO': {'function': 'all'},
+                'IN': {'function': 'instructional'},
+                'OP': {'function': 'operating-total'},
+                'NO': {'function': 'non-operating-objects'},
+            }
+        ),
+        'PFT': (
+            {'field': 'tax'},
+            {
+                # Nominal and adopted tax rates are the same. These are
+                # the rates that appear on tax forms.
+                'ADP': {'rate': 'nominal'},
+                # Interest/sinking is also called the debt service tax
+                'INS': {'rate': 'interest-and-sinking'},
+                'MNO': {'rate': 'maintenance-and-operations'},
+                'TOT': {'rate': 'total'},
+            }
+        ),
+        'PFVTOT': {'field': 'tax/property-value/total'},
+        'PFV': (
+            {'field': 'tax/property-value'},
+            {
+                'BUS': {'category': 'business'},
+                'LAN': {'category': 'land'},
+                'OIL': {'category': 'oil-and-gas'},
+                'OTH': {'category': 'other'},
+                'RES': {'category': 'residential'},
+            }
+        ),
+        'PFX': (
+            {'field': 'expenditure/exclusion'},  # ???
+            {
+                'SSA': {'exclusion': 'ssa-and-payments-to-fiscal-agents'},
+                'EAD': {'exclusion': 'fund-31'},  # ???
+                'ECA': {'exclusion': 'fund-60'},  # ???
+                'RCA': {'exclusion': 'fund-60'},  # ???
+                'EAE': {'exclusion': 'adult-education-programs'},
+                'RAD': {'exclusion': 'adult-education-programs'},
+                'ECP': {'exclusion': 'capital-projects'},  # ???
+                'WLH': {'exclusion': 'wealth-equalization-transfers'},  # ???
+            }
         )
     }
+
+    # Exclusion fields from prior analysis
+    # "exclusion_fields = [\n",
+    # "      (u'ALL', 'expenditure/total/excluded'),\n",
+    # "      (u'AWLH', 'expenditure/by-exclusion/wealth-equalization-transfers'),\n",
+    # "      (u'EAE', 'expenditure/by-exclusion/adult-education-programs'),\n",
+    # "      (u'ECP', 'expenditure/by-exclusion/capital-projects-funds'),\n",
+    # "      (u'EIF', 'expenditure/by-exclusion/tax-increment-fund'),\n",
+    # "      (u'ESS', 'expenditure/by-exclusion/shared-services-arrangements-funds'),\n",
+    # "      (u'GWLH', 'expenditure/by-exclusion/wealth-equalization-transfers'),\n",
+    # "      (u'RCA', 'revenue/by-exclusion/fund-60'),\n",
+    # "      (u'RCP', 'revenue/by-exclusion/capital-projects-funds'),\n",
+    # "      (u'RIF', 'revenue/by-exclusion/tax-increment-fund'),\n",
+    # "      (u'RSS', 'revenue/by-exclusion/shared-services-arrangements-funds'),\n",
+    # "      (u'SSA', 'expenditure/by-exclusion/ssa-payments-to-fiscal-agents'),\n",
+    # "      (u'TUI', 'expenditure/by-exclusion/tuition-transfers-for-grades-not-offered'),\n",
+    # "]"
 
 
 @analyzer
