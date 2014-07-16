@@ -674,6 +674,49 @@ def analyze_taas(aeis_file):
         )}
     )}
 
+@analyzer
+@analyzer_dsl
+def analyze_cad(aeis_file):
+    """
+    College Admissions, College-Ready Graduates
+    """
+    return {r'(?P<group>\w)': (
+        {'group': {
+            # Groups
+            'A': {'group': 'all'},
+            'E': {'group': 'economically-disadvantaged'},
+            'L': {'group': 'limited-english-proficient'},
+            'R': {'group': 'at-risk'},
+            'S': {'group': 'special-education'},
+            # Genders
+            'F': {'gender': 'female'},
+            'M': {'gender': 'male'},
+            # Races
+            '2': {'race': 'two-or-more-races'},
+            '3': {'race': 'asian'},
+            '4': {'race': 'pacific-islander'},
+            'B': {'race': 'black'},
+            'H': {'race': 'hispanic'},
+            'I': {'race': 'native-american'},
+            'O': {'race': 'other'},
+            'W': {'race': 'white'}}},
+        {'(?P<metric>\w\w\w)': (
+            {'metric': {
+                'CRR': {'field': 'college-admissions/college-ready',
+                        'subject': 'reading'},
+                'CRM': {'field': 'college-admissions/college-ready',
+                        'subject': 'math'},
+                'CRB': {'field': 'college-admissions/college-ready',
+                        'subject': 'both'},
+                '0CA': {'field': 'act', 'measure': 'average'},
+                '0CS': {'field': 'sat', 'measure': 'average'},
+                '0CT': {'field': 'college-admissions/taking-act-or-sat'},
+                '0CC': {'field': 'college-admissions/above-criteria'}}},
+                # ??? Is "above-criteria" equivalent to "at-or-above-criteria"
+            {r'(?P<year>\d\d)': {'year': parse_two_digit_year}}
+        )}
+    )}
+
 
 analyze_tasa = analyze_taas
 analyze_tasb = analyze_taas
