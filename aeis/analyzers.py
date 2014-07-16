@@ -756,7 +756,8 @@ def get_or_create_metadata(root):
 if __name__ == '__main__':
     root = sys.argv[1]
     metadata = get_or_create_metadata(root)
+    files = sorted(get_files(root), key=lambda f: f.year, reverse=True)
 
     # Make another pass for analysis
-    for aeis_file in get_files(root):
+    for aeis_file in files:
         analyze_columns(aeis_file, metadata=metadata)
