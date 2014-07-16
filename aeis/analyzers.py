@@ -42,6 +42,20 @@ def parse_two_digit_grade(grade):
 
 
 def analyzer(analyze_function):
+    """
+    Decorates a core analyzer function that consumes the column name and
+    yields analysis of an AEIS column.
+
+    Returns an `analyze` function that analyzes a column in three steps:
+
+    1. Pre-process the column to analyze common column names
+    2. Yield analysis from applying `analyze_function` to the remainder
+    3. Post-process the column to analyze common suffixes
+
+    Yields analysis tuples of the form `(evidence, metadata)`,
+    where `evidence` is the substring of the column that determined the
+    analysis in the `metadata` dict.
+    """
     def analyze(aeis_file, column):
         yield '', {'version': aeis_file.year}
 
@@ -111,6 +125,34 @@ def analyzer(analyze_function):
 
 
 def analyzer_dsl(get_dsl):
+    """
+    Decorates a function that takes an AEIS file and a partial column
+    and consumes yields (partial, data) tuples...
+
+    The result of `get_dsl` is a dictionary where each key traverses a
+    path to more specific metadata.
+
+    Example:
+
+        Full column: campothr.dat:CH0EQ94R
+        Partial column: H0EQ94R
+        DSL dictionary:
+            {'H0': (
+                {'race': 'hispanic'},
+                {'EQ': (
+                    {'field': 'taas-tasp-equivalence'},
+                    # ...
+                )}
+            )}
+        Analysis: {'field': 'taas-tasp-equivalence', 'race': 'hispanic'}
+
+    DSL follows the format `{rule: (metadata, *rules)}`, where:
+
+    1. `rule` is a literal string or a regex beginning the remainder
+    2. `metadata` is a dict that is yielded as a result of matching the rule
+    3. `rules` are additional rules that may be applied after stripping the
+       remainder of the parent rule.
+    """
     def analyze(aeis_file, remainder):
         tree = get_dsl(aeis_file)
         items = tree.iteritems()
