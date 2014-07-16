@@ -718,6 +718,45 @@ def analyze_cad(aeis_file):
     )}
 
 
+@analyzer
+@analyzer_dsl
+def analyze_comp(aeis_file):
+    """
+    Completion Rate
+    """
+    return {r'(?P<group>\w)': (
+        {'group': {
+            # Groups
+            'A': {'group': 'all'},
+            'E': {'group': 'economically-disadvantaged'},
+            'L': {'group': 'limited-english-proficient'},
+            'R': {'group': 'at-risk'},
+            'S': {'group': 'special-education'},
+            # Genders
+            'F': {'gender': 'female'},
+            'M': {'gender': 'male'},
+            # Races
+            '2': {'race': 'two-or-more-races'},
+            '3': {'race': 'asian'},
+            '4': {'race': 'pacific-islander'},
+            'B': {'race': 'black'},
+            'H': {'race': 'hispanic'},
+            'I': {'race': 'native-american'},
+            'O': {'race': 'other'},
+            'W': {'race': 'white'}}},
+        {'(?P<metric>[A-Z]C[4-5]X?)': (
+            {'metric': {
+                'DC4X': {'field': 'completion/longitudinal-dropout'},
+                'EC4X': {'field': 'completion/ged-recipients'},
+                'NC4X': {'field': 'completion/continuers'},
+                'GC4X': {'field': 'completion/four-year-graduates'},
+                'GC4': {'field': 'completion/four-year-graduates'},
+                'GC5': {'field': 'completion/five-year-graduates'}}},
+            {r'(?P<year>\d\d)': {'year': parse_two_digit_year}}
+        )}
+    )}
+
+
 analyze_tasa = analyze_taas
 analyze_tasb = analyze_taas
 analyze_tasc = analyze_taas
