@@ -1,4 +1,5 @@
 import itertools
+import functools
 import os
 import pprint
 import re
@@ -56,6 +57,7 @@ def analyzer(analyze_function):
     where `evidence` is the substring of the column that determined the
     analysis in the `metadata` dict.
     """
+    @functools.wraps(analyze_function)
     def analyze(aeis_file, column):
         yield '', {'version': aeis_file.year}
 
@@ -153,6 +155,7 @@ def analyzer_dsl(get_dsl):
     3. `rules` are additional rules that may be applied after stripping the
        remainder of the parent rule.
     """
+    @functools.wraps(get_dsl)
     def analyze(aeis_file, remainder):
         tree = get_dsl(aeis_file)
         items = tree.iteritems()
