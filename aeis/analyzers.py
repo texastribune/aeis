@@ -261,10 +261,10 @@ def analyze_fin(aeis_file):
             {'OPR': {'field': 'expenditure/total', 'function': 'operating'}},
             {'OPO': {'field': 'expenditure/total', 'object': 'operating'}},
             {
+                'ALL': {'function': 'all'},
                 'ADI': {'function': 'administration/instructional'},
                 'ADC': {'function': 'administration/central'},
                 'ADS': {'function': 'administration/campus'},
-                'ALL': {'function': 'all'},
                 'CAP': {'function': 'capital-outlay'},
                 'COM': {'function': 'community-services'},
                 'DEB': {'function': 'debt-service'},
@@ -289,7 +289,7 @@ def analyze_fin(aeis_file):
             {'field': 'expenditure'},
             {
                 'BIL': {'program': 'bilingual'},
-                'COM': {'program': 'compensatory-expenditure'},
+                'COM': {'program': 'compensatory'},
                 'GIF': {'program': 'gifted-and-talented'},
                 'REG': {'program': 'regular'},
                 'SPE': {'program': 'special'},
@@ -309,10 +309,10 @@ def analyze_fin(aeis_file):
         'PFCR': (
             {'field': 'revenue/cooperative'},
             {
+                'TO': {'source': 'all'},
                 'LO': {'source': 'local'},
                 'ST': {'source': 'state'},
                 'FE': {'source': 'federal'},
-                'TO': {'source': 'all'},
             }
         ),
         'PFCE': (
@@ -378,6 +378,162 @@ def analyze_fin(aeis_file):
     # "      (u'SSA', 'expenditure/by-exclusion/ssa-payments-to-fiscal-agents'),\n",
     # "      (u'TUI', 'expenditure/by-exclusion/tuition-transfers-for-grades-not-offered'),\n",
     # "]"
+
+
+@analyzer
+@analyzer_dsl
+def analyze_fin_2012(aeis_file):
+    # TODO: refactor
+    return {
+        'PFFENDT': {'field': 'fund-balance/ending'},
+        'PFFENDP': {'field': 'fund-balance/percent-of-expenditure'},
+        'PFVTOT': {'field': 'tax/property-value/total'},
+        'PFCR': (
+            {'field': 'revenue/cooperative'},
+            {
+                'TO': {'source': 'all'},
+                'LO': {'source': 'local'},
+                'ST': {'source': 'state'},
+                'FE': {'source': 'federal'},
+            }
+        ),
+        'PFCE': (
+            {'field': 'expenditure/cooperative'},
+            {
+                'TO': {'function': 'all'},
+                'IN': {'function': 'instructional'},
+                'OP': {'function': 'operating-total'},
+                'NO': {'function': 'non-operating-objects'},
+            }
+        ),
+        'PFE': (  # Expenditure by function
+            {'field': 'expenditure'},
+            {'OPR': {'field': 'expenditure/total', 'function': 'operating'}},
+            {'OPO': {'field': 'expenditure/total', 'object': 'operating'}},
+            {
+                # 2012 and later (all funds)
+                'AALL': {'function': 'all'},
+                'AADI': {'function': 'administration/instructional'},
+                'AADS': {'function': 'administration/leadership'},
+                'AINS': {'function': 'administration/leadership'},
+                'AOPR': {'function': 'operating-total'},
+                'AOTH': {'function': 'other'},
+                'AREL': {'function': 'instruction-related'},
+                'ASUP': {'function': 'support-services/student'},
+                # 2012 and later (general fund)
+                'GALL': {'function': 'all', 'fund': 'general'},
+                'GADI': {'function': 'administration/instructional', 'fund': 'general'},
+                'GADS': {'function': 'administration/leadership', 'fund': 'general'},
+                'GINS': {'function': 'administration/leadership', 'fund': 'general'},
+                'GOPR': {'function': 'operating-total', 'fund': 'general'},
+                'GOTH': {'function': 'other', 'fund': 'general'},
+                'GREL': {'function': 'instruction-related', 'fund': 'general'},
+                'GSUP': {'function': 'support-services/student', 'fund': 'general'},
+                # Pre-2012
+                'ALL': {'function': 'all'},
+                'ADI': {'function': 'administration/instructional'},
+                'ADC': {'function': 'administration/central'},
+                'ADS': {'function': 'administration/campus'},
+                'CAP': {'function': 'capital-outlay'},
+                'COM': {'function': 'community-services'},
+                'DEB': {'function': 'debt-service'},
+                'INR': {'function': 'administration/instruction-related'},
+                'INS': {'function': 'instruction'},
+                'NOF': {'function': 'non-operating'},
+                'OPF': {'function': 'operating'},
+                'OTH': {'function': 'other'},
+                'OTR': {'function': 'other'},
+                'SUP': {'function': 'support-services/student'},
+            },
+            {
+                'NOO': {'object-type': 'non-operating'},
+                'OOP': {'object-type': 'other-operating'},
+            },
+            {
+                'PAY': {'object': 'payroll'},
+                'PLA': {'object': 'plant-services'},
+            }
+        ),
+        'PFT': (
+            {'field': 'tax'},
+            {
+                # Nominal and adopted tax rates are the same. These are
+                # the rates that appear on tax forms.
+                'ADP': {'rate': 'nominal'},
+                # Interest/sinking is also called the debt service tax
+                'INS': {'rate': 'interest-and-sinking'},
+                'MNO': {'rate': 'maintenance-and-operations'},
+                'TOT': {'rate': 'total'},
+            }
+        ),
+        'PFP': (  # Expenditure by program
+            {'field': 'expenditure'},
+            {
+                # 2012 and later (all funds)
+                'AALL': {'program': 'all'},
+                'AREG': {'program': 'regular'},
+                'ASPE': {'program': 'special'},
+                'AATH': {'program': 'athletics'},
+                'ABIL': {'program': 'bilingual'},
+                'ACOM': {'program': 'compensatory'},
+                'AGIF': {'program': 'gifted-and-talented'},
+                'AHSA': {'program': 'high-school-allotment'},
+                'AOTH': {'program': 'other'},
+                'AVOC': {'program': 'vocational'},
+                # 2012 and later (general fund)
+                'GALL': {'program': 'all', 'fund': 'general'},
+                'GREG': {'program': 'regular', 'fund': 'general'},
+                'GSPE': {'program': 'special', 'fund': 'general'},
+                'GATH': {'program': 'athletics', 'fund': 'general'},
+                'GBIL': {'program': 'bilingual', 'fund': 'general'},
+                'GCOM': {'program': 'compensatory', 'fund': 'general'},
+                'GGIF': {'program': 'gifted-and-talented', 'fund': 'general'},
+                'GHSA': {'program': 'high-school-allotment', 'fund': 'general'},
+                'GOTH': {'program': 'other', 'fund': 'general'},
+                'GVOC': {'program': 'vocational', 'fund': 'general'},
+                # Pre-2012
+                'BIL': {'program': 'bilingual'},
+                'COM': {'program': 'compensatory'},
+                'GIF': {'program': 'gifted-and-talented'},
+                'REG': {'program': 'regular'},
+                'SPE': {'program': 'special'},
+                'VOC': {'program': 'vocational'}
+            }
+        ),
+        'PFR': (
+            {'field': 'revenue'},
+            {
+                'ALL': {'source': 'all'},
+                'FED': {'source': 'federal'},
+                'LOC': {'source': 'local'},
+                'OTH': {'source': 'other-local-and-intermediate'},
+                'STA': {'source': 'state'},
+            }
+        ),
+        'PFV': (
+            {'field': 'tax/property-value'},
+            {
+                'BUS': {'category': 'business'},
+                'LAN': {'category': 'land'},
+                'OIL': {'category': 'oil-and-gas'},
+                'OTH': {'category': 'other'},
+                'RES': {'category': 'residential'},
+            }
+        ),
+        'PFX': (
+            {'field': 'expenditure/exclusion'},  # ???
+            {
+                'SSA': {'exclusion': 'ssa-and-payments-to-fiscal-agents'},
+                'EAD': {'exclusion': 'fund-31'},  # ???
+                'ECA': {'exclusion': 'fund-60'},  # ???
+                'RCA': {'exclusion': 'fund-60'},  # ???
+                'EAE': {'exclusion': 'adult-education-programs'},
+                'RAD': {'exclusion': 'adult-education-programs'},
+                'ECP': {'exclusion': 'capital-projects'},  # ???
+                'WLH': {'exclusion': 'wealth-equalization-transfers'},  # ???
+            }
+        )
+    }
 
 
 @analyzer
