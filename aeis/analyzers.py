@@ -771,9 +771,10 @@ def analyze_columns(aeis_file, metadata=None):
 
     # Get an appropriate analyzer for this file
     analyzer_name = 'analyze_%s' % aeis_file.root_name
-    try:
-        analyzer = globals()[analyzer_name]
-    except KeyError:
+    analyzer_name_by_year = '%s_%s' % (analyzer_name, aeis_file.year)
+    analyzer = globals().get(analyzer_name)
+    analyzer = globals().get(analyzer_name_by_year, analyzer)
+    if not analyzer:
         raise RuntimeError(
             'You must implement an analyzer named "%s" to parse "%s"' % (
                 analyzer_name, aeis_file))
@@ -790,7 +791,15 @@ def analyze_columns(aeis_file, metadata=None):
 
         analysis = {}
         for partial, data in generator:
-            analysis.update(data)
+            print repr(data)
+            try:
+                analysis.update(data)
+            except ValueError:
+                message = 'Analyzer %r yielded invalid data:\n%s' % (
+                    analyzer.func_name,
+                    pprint.pformat(data)
+                )
+                raise ValueError(message)
 
             # Determine continuation from the partial value
             if partial == remainder:
