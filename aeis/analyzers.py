@@ -541,59 +541,87 @@ def analyze_othr(aeis_file, remainder):
     rate_means_percent = False
     rate_is_fake = False
 
-    # Start with a 2-digit demographic code...
-    if remainder.startswith('A0'):
-        yield 'A0', {'group': 'all'}
-    elif remainder.startswith('E0'):
-        yield 'E0', {'group': 'economically-disadvantaged'}
-    elif remainder.startswith('O0'):
-        yield 'O0', {'group': 'other'}
-    elif remainder.startswith('S0'):
-        yield 'S0', {'group': 'special-education'}
+    # Start with a 1-digit demographic code...
+    if remainder.startswith('A'):
+        yield 'A', {'group': 'all'}
+    elif remainder.startswith('E'):
+        yield 'E', {'group': 'economically-disadvantaged'}
+    elif remainder.startswith('S'):
+        yield 'S', {'group': 'special-education'}
+    elif remainder.startswith('L'):
+        yield 'L', {'group': 'limited-english-proficient'}
+    elif remainder.startswith('R'):
+        yield 'R', {'group': 'at-risk'}
 
     # Or a gender code...
-    elif remainder.startswith('F0'):
-        yield 'F0', {'gender': 'female'}
-    elif remainder.startswith('M0'):
-        yield 'M0', {'gender': 'male'}
+    elif remainder.startswith('F'):
+        yield 'F', {'gender': 'female'}
+    elif remainder.startswith('M'):
+        yield 'M', {'gender': 'male'}
 
     # Or a race code...
-    elif remainder.startswith('B0'):
-        yield 'B0', {'race': 'black'}
-    elif remainder.startswith('H0'):
-        yield 'H0', {'race': 'hispanic'}
-    elif remainder.startswith('W0'):
-        yield 'W0', {'race': 'white'}
+    elif remainder.startswith('B'):
+        yield 'B', {'race': 'black'}
+    elif remainder.startswith('H'):
+        yield 'H', {'race': 'hispanic'}
+    elif remainder.startswith('W'):
+        yield 'W', {'race': 'white'}
+    elif remainder.startswith('P'):
+        yield 'P', {'race': 'asian'}
+    elif remainder.startswith('2'):
+        yield '2', {'race': 'two-or-more-races'}
+    elif remainder.startswith('3'):
+        yield '3', {'race': 'asian'}
+    elif remainder.startswith('4'):
+        yield '4', {'race': 'pacific-islander'}
+    elif remainder.startswith('I'):
+        yield 'I', {'race': 'native-american'}
+    elif remainder.startswith('O'):
+        yield 'O', {'race': 'other'}
 
     # Assume we parsed something
-    remainder = remainder[2:]
+    remainder = remainder[1:]
 
-    # Next is a 2-digit code siginifying the actualy field
-    if remainder.startswith('AD'):
-        yield 'AD', {'field': 'advanced-course-enrollment'}
-    elif remainder.startswith('AT'):
-        yield 'AT', {'field': 'attendance'}
-    elif remainder.startswith('CA'):
+    # Next is a 3-digit code siginifying the actualy field
+    if remainder.startswith('0AD'):
+        yield '0AD', {'field': 'advanced-course-enrollment'}
+    elif remainder.startswith('0AT'):
+        yield '0AT', {'field': 'attendance'}
+    elif remainder.startswith('0CA'):
         rate_is_fake = True
-        yield 'CA', {'field': 'act', 'measure': 'average'}
-    elif remainder.startswith('CS'):
+        yield '0CA', {'field': 'act', 'measure': 'average'}
+    elif remainder.startswith('0CS'):
         rate_is_fake = True
-        yield 'CS', {'field': 'sat', 'measure': 'average'}
-    elif remainder.startswith('CC'):
+        yield '0CS', {'field': 'sat', 'measure': 'average'}
+    elif remainder.startswith('0CC'):
         rate_means_percent = True
-        yield 'CC', {'field': 'college-admissions/at-or-above-criteria'}
-    elif remainder.startswith('CT'):
+        yield '0CC', {'field': 'college-admissions/at-or-above-criteria'}
+    elif remainder.startswith('0CT'):
         rate_means_percent = True
-        yield 'CT', {'field': 'college-admissions/taking-act-or-sat'}
-    elif remainder.startswith('MM'):
-        yield 'MM', {'field': 'dropouts/method-i'}
-    elif remainder.startswith('DR'):
-        yield 'DR', {'field': 'dropouts/method-ii'}
-    elif remainder.startswith('EQ'):
-        yield 'EQ', {'field': 'taas-tasp-equivalence'}
+        yield '0CT', {'field': 'college-admissions/taking-act-or-sat'}
+    elif remainder.startswith('0MM'):
+        yield '0MM', {'field': 'dropouts/method-i'}
+    elif remainder.startswith('0DR'):
+        yield '0DR', {'field': 'dropouts/method-ii'}
+    elif remainder.startswith('0EQ'):
+        yield '0EQ', {'field': 'taas-tasp-equivalence'}
+    elif remainder.startswith('0BK'):
+        yield '0BK', {'field': 'ap-ib/students-above-criterion'}
+    elif remainder.startswith('0BS'):
+        yield '0BS', {'field': 'ap-ib/scores-above-criterion'}
+    elif remainder.startswith('0BT'):
+        yield '0BT', {'field': 'ap-ib/students-taking-test'}
+    elif remainder.startswith('0GH'):
+        yield '0GH', {'field': 'graduates', 'program': 'recommended'}
 
-    # Assume we parsed something
-    remainder = remainder[2:]
+    # Later datasets may have a special dropout field instead
+    if remainder.startswith('0708DR'):
+        yield '0708DR', {'grade': '7-8', 'field': 'annual-dropout'}
+    elif remainder.startswith('0912DR'):
+        yield '0912DR', {'grade': '9-12', 'field': 'annual-dropout'}
+
+    # Assume we parsed something and cut to the end
+    remainder = remainder[-3:]
 
     # A 2-digit year appears before the last letter
     if TWO_DIGIT_YEAR.match(remainder[:2]):
