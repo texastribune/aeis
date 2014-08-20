@@ -677,8 +677,14 @@ def analyze_staf(aeis_file):
                 'MAT': {'subject': 'math'},
                 'SCI': {'subject': 'science'},
                 'SST': {'subject': 'social-studies'},
+                'SOC': {'subject': 'social-studies'},
                 'ELE': {'grade': 'elementary'},
-                'G(?P<grade>\w\w)': ({'grade': parse_two_digit_grade}),
+            },
+            {
+                'G': (
+                    {},
+                    {'(?P<grade>\w\w)': {'grade': parse_two_digit_grade}}
+                )
             }
         ),
         'PS': (
@@ -715,9 +721,14 @@ def analyze_staf(aeis_file):
                                     'BL': {'race': 'black'},
                                     'WH': {'race': 'white'},
                                     'HI': {'race': 'hispanic'},
+                                    # TODO: change to "native-american"?
+                                    'IN': {'race': 'indian-alaskan'},
                                     'NA': {'race': 'native-american'},
+                                    'AS': {'race': 'asian'},
                                     'PA': {'race': 'asian-pacific-islander'},
+                                    'PI': {'race': 'pacific-islander'},
                                     'OE': {'race': 'other'},
+                                    'TW': {'race': 'two-or-more-races'},
                                     # Gender
                                     'FE': {'gender': 'female'},
                                     'MA': {'gender': 'male'},
@@ -747,6 +758,7 @@ def analyze_staf(aeis_file):
                             'S': 'school-administrators',
                             'U': 'support',
                             'X': 'auxiliary',
+                            'O': 'contract-service',
                         }
                     },
                     {
