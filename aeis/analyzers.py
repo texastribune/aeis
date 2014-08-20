@@ -985,7 +985,7 @@ def analyze_columns(aeis_file, metadata=None):
 
         analysis = {}
         for partial, data in generator:
-            print repr(data)
+            print repr(partial), repr(data)
             try:
                 analysis.update(data)
             except ValueError:
