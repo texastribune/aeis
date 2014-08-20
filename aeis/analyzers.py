@@ -72,6 +72,16 @@ def analyzer(analyze_function):
             yield column, {'field': 'paired-campus/code'}
         elif column.lower() == 'pairname':
             yield column, {'field': 'paired-campus/name'}
+        elif column.lower() == 'cflchart':
+            yield column, {'field': 'is-charter-school'}
+        elif column.lower() == 'cntyname':
+            yield column, {'field': 'county-name'}
+        elif column.lower() == 'county':
+            yield column, {'field': 'county-number'}
+        elif column.lower() == 'grdspan':
+            yield column, {'field': 'grade-span'}
+        elif column.lower() == 'grdtype':
+            yield column, {'field': 'grade-type'}
         else:
             # Parse the first character to determine the level and
             # possibly the group-mean measure (for campus data).
