@@ -5,7 +5,6 @@ import pprint
 import re
 import shelve
 import sre_constants
-import sys
 
 from .files import get_files
 from .fields import get_columns
@@ -971,75 +970,6 @@ analyze_tasb = analyze_taas
 analyze_tasc = analyze_taas
 
 
-def analyze_columns(aeis_file, metadata=None):
-    metadata = metadata if metadata is not None else {}
-    columns = list(get_columns(aeis_file, metadata=metadata))
-
-    # Get an appropriate analyzer for this file
-    analyzer_name = 'analyze_%s' % aeis_file.root_name
-    analyzer_name_by_year = '%s_%s' % (analyzer_name, aeis_file.year)
-    analyzer = globals().get(analyzer_name)
-    analyzer = globals().get(analyzer_name_by_year, analyzer)
-    if not analyzer:
-        raise RuntimeError(
-            'You must implement an analyzer named "%s" to parse "%s"' % (
-                analyzer_name, aeis_file))
-
-    analyzed_columns = set()
-    for column in sorted(columns):
-        position = 0
-        remainder = column
-        generator = analyzer(aeis_file, remainder)
-        pretty_metadata = pprint.pformat(metadata.get(column))
-
-        # Print the current column
-        print '{}/{}:{}'.format(aeis_file.year, aeis_file.base_name, column)
-
-        analysis = {}
-        for partial, data in generator:
-            print repr(partial), repr(data)
-            try:
-                analysis.update(data)
-            except ValueError:
-                message = 'Analyzer %r yielded invalid data:\n%s' % (
-                    analyzer.func_name,
-                    pprint.pformat(data)
-                )
-                raise ValueError(message)
-
-            # Determine continuation from the partial value
-            if partial == remainder:
-                remainder = None
-                break
-            elif not remainder.startswith(partial):
-                message = (
-                    'Invalid partial %r for remainder %r of %r' +
-                    ' in position %d'
-                )
-                message %= (partial, remainder, column, position)
-                message += '\nMetadata: %r' % pretty_metadata
-                raise ValueError(message)
-
-            # Remove partial data from remainder
-            remainder = remainder.replace(partial, '', 1)
-            position += len(partial)
-
-        # If there is a remainder after the generator stops, raise an
-        # exception because we didn't parse all metadata from the field.
-        if remainder:
-            message = 'Could not parse remainder %r of %r in position %d'
-            message %= (remainder, column, position)
-            message += '\nMetadata: %r' % pretty_metadata
-            raise ValueError(message)
-
-        # Print analysis
-        pprint.pprint(analysis)
-
-        # Report progress
-        analyzed_columns.add(column)
-        print '{}/{}...'.format(len(analyzed_columns), len(columns))
-
-
 def get_or_create_metadata(root):
     if os.path.exists('metadata.shelf'):
         return dict(shelve.open('metadata.shelf'))
@@ -1051,13 +981,3 @@ def get_or_create_metadata(root):
             pass
 
     return metadata
-
-
-if __name__ == '__main__':
-    root = sys.argv[1]
-    metadata = get_or_create_metadata(root)
-    files = sorted(get_files(root), key=lambda f: f.year, reverse=True)
-
-    # Make another pass for analysis
-    for aeis_file in files:
-        analyze_columns(aeis_file, metadata=metadata)
