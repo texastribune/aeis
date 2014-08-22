@@ -28,6 +28,8 @@ def parse_one_digit_grade(grade):
         return '4-8-and-10'
     elif grade == 'X':
         return '10'
+    elif grade == 'K':
+        return 'kindergarten'
     else:
         return str(int(grade))
 
@@ -790,18 +792,26 @@ def analyze_stud(aeis_file):
         'ECO': {'group': 'economically-disadvantaged'},
         'GIF': {'group': 'gifted-and-talented'},
         'LEP': {'group': 'limited-english-proficient'},
+        'NED': {'group': 'non-educationally-disadvantaged'},
+        'RSK': {'group': 'at-risk'},
     }
 
     programs = {
         'SPE': {'program': 'special'},
         'BIL': {'program': 'bilingual'},
+        # Disciplinary Alternative Education Program
+        'DIS': {'program': 'daep'},
         'VOC': {'program': 'vocational'},
     }
 
     races = {
+        'ASI': {'race': 'asian'},
         'BLA': {'race': 'black'},
         'HIS': {'race': 'hispanic'},
+        'IND': {'race': 'native-american'},
         'OTH': {'race': 'other'},
+        'PCI': {'race': 'pacific-islander'},
+        'TWO': {'race': 'two-or-more-races'},
         'WHI': {'race': 'white'},
     }
 
@@ -827,7 +837,42 @@ def analyze_stud(aeis_file):
     }
 
     return {
-        # Transition
+        r'(?P<group>\w)(?P<field>0G\w)': (
+            {
+                'group': {
+                    # Groups
+                    'A': {'group': 'all'},
+                    'E': {'group': 'economically-disadvantaged'},
+                    'L': {'group': 'limited-english-proficient'},
+                    'R': {'group': 'at-risk'},
+                    'S': {'group': 'special-education'},
+                    # Genders
+                    'F': {'gender': 'female'},
+                    'M': {'gender': 'male'},
+                    # Races
+                    '2': {'race': 'two-or-more-races'},
+                    '3': {'race': 'asian'},
+                    '4': {'race': 'pacific-islander'},
+                    'B': {'race': 'black'},
+                    'H': {'race': 'hispanic'},
+                    'I': {'race': 'native-american'},
+                    'O': {'race': 'other'},
+                    'W': {'race': 'white'}
+                },
+                'field': {
+                    '0GH': {'field': 'graduates', 'program': 'recommended'},
+                    '0GM': {'field': 'graduates', 'program': 'minimum'},
+                    '0GR': {'field': 'graduates', 'program': 'regular'},
+                }
+            },
+            {
+                r'(?P<year>\d\d)': (
+                    {'year': parse_two_digit_year},
+                    # TODO: Move to common analyzer?
+                    {'N': {'measure': 'count'}}
+                )
+            }
+        ),
         r'(?P<field>PEG|PEM|PER|PET)': (
             # Metadata
             {
@@ -837,6 +882,18 @@ def analyze_stud(aeis_file):
                     'PER': {'field': 'retention'},
                     'PET': {'field': 'enrollment'},
                 },
+            },
+            # Retention (??? to 2012)
+            {
+                r'(?P<program>RA|SA)(?P<grade>[1-8,K])': (
+                    {
+                        'program': {
+                            'RA': {'program': 'regular'},
+                            'SA': {'program': 'special'},
+                        },
+                        'grade': parse_one_digit_grade
+                    }
+                )
             },
             # Remainders
             graduate_distinctions,
