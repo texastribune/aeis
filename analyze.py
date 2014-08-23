@@ -92,7 +92,7 @@ def analyze_column_in_loop(column, analyzer, metadata):
         try:
             analysis = analyze_column(column, analyzer, metadata=metadata)
             break
-        except ValueError as e:
+        except Exception as e:
             traceback.print_exc()
             time.sleep(3)
 
