@@ -984,13 +984,15 @@ def analyze_stud(aeis_file):
     }
 
     return {
-        r'(?P<group>\w)(?P<field>0G\w)': (
+        r'(?P<group>\w)(?P<field>PID|UND|0G\w)': (
             {
                 'group': GROUP_CODES,
                 'field': {
                     '0GH': {'field': 'graduates', 'program': 'recommended'},
                     '0GM': {'field': 'graduates', 'program': 'minimum'},
                     '0GR': {'field': 'graduates', 'program': 'regular'},
+                    'PID': {'field': 'pid-error'},
+                    'UND': {'field': 'underreported-students'},
                 }
             },
             {
