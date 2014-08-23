@@ -41,6 +41,17 @@ GROUP_CODES = {
     'L': {'group': 'limited-english-proficient'},
     'R': {'group': 'at-risk'},
     'S': {'group': 'special-education'},
+    # Bilingual
+    '5': {'group': 'lep-with-services'},
+    'C': {'group': 'esl'},
+    'J': {'group': 'transitional-bilingual-early-exit'},
+    'K': {'group': 'transitional-bilingual-late-exit'},
+    'Q': {'group': 'dual-language-immersion-two-way'},
+    'T': {'group': 'dual-language-immersion-one-way'},
+    'U': {'group': 'bilingual'},
+    'X': {'group': 'esl-content-based'},
+    'Y': {'group': 'esl-pullout'},
+    'Z': {'group': 'lep-no-services'},
     # Genders
     'F': {'gender': 'female'},
     'M': {'gender': 'male'},
@@ -1140,11 +1151,12 @@ def analyze_taks(aeis_file):
             'year': parse_two_digit_year
         }),
         (r'(?P<group>\w)'
-         r'(?P<field>TSI)(?P<test>\w)'
+         r'(?P<field>TSI|CT)(?P<test>\w)'
          r'(?P<year>\d\d)'): ({
             'group': GROUP_CODES,
             'grade': parse_three_digit_grade,
             'field': {
+                'CT': {'field': 'taks/cumulative'},  # ???
                 'TSI': {'field': 'taks/texas-success-initiative'},
             },
             'test': tests,
@@ -1164,6 +1176,10 @@ analyze_taks3 = analyze_taks
 
 # Progress of TAKS Failers, Texas Success Initiative
 analyze_taks4 = analyze_taks
+
+# Progress of Prior Year TAKS Failers, Percent Passing TAKS, Eng Lang Arts
+# District, region, and state only
+analyze_taks5 = analyze_taks
 
 
 def get_or_create_metadata(root):
