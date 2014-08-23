@@ -1,5 +1,5 @@
 *.pyc
+*.shelf
 .dat
 data/*
-metadata.shelf
 node_modules

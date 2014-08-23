@@ -6,6 +6,7 @@ import time
 import traceback
 
 from aeis.analyzers import get_or_create_metadata
+from aeis.analyzers import get_or_create_analysis
 from aeis.fields import get_columns
 from aeis.files import get_files
 from aeis import analyzers
@@ -134,7 +135,7 @@ def analyze_columns(aeis_file, metadata=None):
     columns = list(get_columns(aeis_file, metadata=metadata))
     analyzer = get_analyzer_in_loop(aeis_file)
 
-    analyzed_columns = set()
+    n_analyzed = 0
     for column in sorted(columns):
         # Keep analyzing until we get it right...
         analysis = analyze_column_in_loop(column, analyzer, metadata)
@@ -146,15 +147,24 @@ def analyze_columns(aeis_file, metadata=None):
             print json.dumps(analysis)
 
         # Report progress
-        analyzed_columns.add(column)
-        logger.debug('%d/%d...', len(analyzed_columns), len(columns))
+        n_analyzed += 1
+        logger.debug('%d/%d...', n_analyzed, len(columns))
+
+        # Yield the analysis
+        yield analysis
 
 
 if __name__ == '__main__':
     root = sys.argv[1]
-    metadata = get_or_create_metadata(root)
-    files = sorted(get_files(root), key=lambda f: f.year, reverse=False)
 
-    # Make another pass for analysis
+    # Get files to process
+    files = sorted(get_files(root), key=lambda f: f.year, reverse=False)
+    files = (f for f in files if f.year in (1994, 2012))
+
+    # Get all analyzed columns
+    metadata = get_or_create_metadata(root)
+    analysis = get_or_create_analysis(root)
     for aeis_file in files:
-        analyze_columns(aeis_file, metadata=metadata)
+        for column in analyze_columns(aeis_file, metadata=metadata):
+            key = column['key']
+            analysis[key] = column

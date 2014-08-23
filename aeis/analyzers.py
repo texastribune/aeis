@@ -112,6 +112,7 @@ def parse_three_digit_grade(grade):
     return str(int(grade))
 
 
+# TODO: Move to analysis.py
 def analyzer(analyze_function):
     """
     Decorates a core analyzer function that consumes the column name and
@@ -230,6 +231,7 @@ def analyzer(analyze_function):
     return analyze
 
 
+# TODO: Move to analysis.py
 def analyzer_dsl(get_dsl):
     """
     Decorates a function that takes an AEIS file and a partial column
@@ -1171,6 +1173,7 @@ analyze_taks4 = analyze_taks
 analyze_taks5 = analyze_taks
 
 
+# TODO: Move to metadata.py
 def get_or_create_metadata(root):
     if os.path.exists('metadata.shelf'):
         return dict(shelve.open('metadata.shelf'))
@@ -1182,3 +1185,11 @@ def get_or_create_metadata(root):
             pass
 
     return metadata
+
+
+# TODO: Move to analysis.py
+def get_or_create_analysis(root):
+    if os.path.exists('analysis.shelf'):
+        return dict(shelve.open('analysis.shelf'))
+
+    return shelve.open('analysis.shelf')
