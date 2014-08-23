@@ -10,6 +10,28 @@ from .files import get_files
 from .fields import get_columns
 
 
+GROUP_CODES = {
+    # Groups
+    'A': {'group': 'all'},
+    'E': {'group': 'economically-disadvantaged'},
+    'L': {'group': 'limited-english-proficient'},
+    'R': {'group': 'at-risk'},
+    'S': {'group': 'special-education'},
+    # Genders
+    'F': {'gender': 'female'},
+    'M': {'gender': 'male'},
+    # Races
+    '2': {'race': 'two-or-more-races'},
+    '3': {'race': 'asian'},
+    '4': {'race': 'pacific-islander'},
+    'B': {'race': 'black'},
+    'H': {'race': 'hispanic'},
+    'I': {'race': 'native-american'},
+    'O': {'race': 'other'},
+    'W': {'race': 'white'}
+}
+
+
 TWO_DIGIT_YEAR = re.compile('\d\d')
 
 
@@ -41,6 +63,10 @@ def parse_two_digit_grade(grade):
         return 'mixed-elementary'
     else:
         return str(int(grade))
+
+
+def parse_three_digit_grade(grade):
+    return str(int(grade))
 
 
 def analyzer(analyze_function):
@@ -839,26 +865,7 @@ def analyze_stud(aeis_file):
     return {
         r'(?P<group>\w)(?P<field>0G\w)': (
             {
-                'group': {
-                    # Groups
-                    'A': {'group': 'all'},
-                    'E': {'group': 'economically-disadvantaged'},
-                    'L': {'group': 'limited-english-proficient'},
-                    'R': {'group': 'at-risk'},
-                    'S': {'group': 'special-education'},
-                    # Genders
-                    'F': {'gender': 'female'},
-                    'M': {'gender': 'male'},
-                    # Races
-                    '2': {'race': 'two-or-more-races'},
-                    '3': {'race': 'asian'},
-                    '4': {'race': 'pacific-islander'},
-                    'B': {'race': 'black'},
-                    'H': {'race': 'hispanic'},
-                    'I': {'race': 'native-american'},
-                    'O': {'race': 'other'},
-                    'W': {'race': 'white'}
-                },
+                'group': GROUP_CODES,
                 'field': {
                     '0GH': {'field': 'graduates', 'program': 'recommended'},
                     '0GM': {'field': 'graduates', 'program': 'minimum'},
@@ -910,19 +917,7 @@ def analyze_stud(aeis_file):
 @analyzer_dsl
 def analyze_taas(aeis_file):
     return {r'(?P<group>[A-Z])': (
-        {'group': {
-            # Groups
-            'A': {'group': 'all'},
-            'E': {'group': 'economically-disadvantaged'},
-            'S': {'group': 'special-education'},
-            # Genders
-            'F': {'gender': 'female'},
-            'M': {'gender': 'male'},
-            # Races
-            'B': {'race': 'black'},
-            'H': {'race': 'hispanic'},
-            'O': {'race': 'other'},
-            'W': {'race': 'white'}}},
+        {'group': GROUP_CODES},
         {r'(?P<grade>[0-8]|X|Z)': (
             {'grade': parse_one_digit_grade},
             {r'(?P<field>T)': (
@@ -946,25 +941,7 @@ def analyze_cad(aeis_file):
     College Admissions, College-Ready Graduates
     """
     return {r'(?P<group>\w)': (
-        {'group': {
-            # Groups
-            'A': {'group': 'all'},
-            'E': {'group': 'economically-disadvantaged'},
-            'L': {'group': 'limited-english-proficient'},
-            'R': {'group': 'at-risk'},
-            'S': {'group': 'special-education'},
-            # Genders
-            'F': {'gender': 'female'},
-            'M': {'gender': 'male'},
-            # Races
-            '2': {'race': 'two-or-more-races'},
-            '3': {'race': 'asian'},
-            '4': {'race': 'pacific-islander'},
-            'B': {'race': 'black'},
-            'H': {'race': 'hispanic'},
-            'I': {'race': 'native-american'},
-            'O': {'race': 'other'},
-            'W': {'race': 'white'}}},
+        {'group': GROUP_CODES},
         {'(?P<metric>\w\w\w)': (
             {'metric': {
                 'CRR': {'field': 'college-admissions/college-ready',
@@ -990,25 +967,7 @@ def analyze_comp(aeis_file):
     Completion Rate
     """
     return {r'(?P<group>\w)': (
-        {'group': {
-            # Groups
-            'A': {'group': 'all'},
-            'E': {'group': 'economically-disadvantaged'},
-            'L': {'group': 'limited-english-proficient'},
-            'R': {'group': 'at-risk'},
-            'S': {'group': 'special-education'},
-            # Genders
-            'F': {'gender': 'female'},
-            'M': {'gender': 'male'},
-            # Races
-            '2': {'race': 'two-or-more-races'},
-            '3': {'race': 'asian'},
-            '4': {'race': 'pacific-islander'},
-            'B': {'race': 'black'},
-            'H': {'race': 'hispanic'},
-            'I': {'race': 'native-american'},
-            'O': {'race': 'other'},
-            'W': {'race': 'white'}}},
+        {'group': GROUP_CODES},
         {'(?P<metric>[A-Z]C[4-5]X?)': (
             {'metric': {
                 'DC4X': {'field': 'completion/longitudinal-dropout'},
@@ -1025,6 +984,38 @@ def analyze_comp(aeis_file):
 analyze_tasa = analyze_taas
 analyze_tasb = analyze_taas
 analyze_tasc = analyze_taas
+
+
+@analyzer
+@analyzer_dsl
+def analyze_taks1(aeis_file):
+    """
+    TAKS Met Standard
+    """
+    common_data = {
+        'field': 'taks/met-standard',
+        'language': 'non-spanish',
+    }
+    test_data = {
+        'TA': dict(common_data, test='all'),
+        'TC': dict(common_data, test='science'),
+        'TE': dict(common_data, test='english-language-arts'),
+        'TM': dict(common_data, test='mathematics'),
+        'TS': dict(common_data, test='social-studies'),
+    }
+
+    return {r'(?P<group>\w)': (
+        {'group': GROUP_CODES},
+        {'(?P<grade>\w\w\w)': (
+            {'grade': parse_three_digit_grade},
+            {
+                r'(?P<test>\w\w)': (
+                    {'test': test_data},
+                    {r'(?P<year>\d\d)': {'year': parse_two_digit_year}}
+                )
+            }
+        )}
+    )}
 
 
 def get_or_create_metadata(root):
