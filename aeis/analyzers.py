@@ -141,9 +141,9 @@ def analyzer(analyze_function):
         elif column.lower() == 'class':
             yield column, {'field': 'school-type'}
         elif column.lower() == 'paircamp':
-            yield column, {'field': 'paired-campus/code'}
+            yield column, {'field': 'paired-campus.code'}
         elif column.lower() == 'pairname':
-            yield column, {'field': 'paired-campus/name'}
+            yield column, {'field': 'paired-campus.name'}
         elif column.lower() == 'cflchart':
             yield column, {'field': 'is-charter-school'}
         elif column.lower() == 'dflchart':
