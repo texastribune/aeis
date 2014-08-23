@@ -127,6 +127,8 @@ def analyzer(analyze_function):
             yield column, {'field': 'paired-campus/name'}
         elif column.lower() == 'cflchart':
             yield column, {'field': 'is-charter-school'}
+        elif column.lower() == 'dflchart':
+            yield column, {'field': 'is-charter-district'}
         elif column.lower() == 'cntyname':
             yield column, {'field': 'county-name'}
         elif column.lower() == 'county':
@@ -135,6 +137,27 @@ def analyzer(analyze_function):
             yield column, {'field': 'grade-span'}
         elif column.lower() == 'grdtype':
             yield column, {'field': 'grade-type'}
+        elif column.lower() == 'secs':
+            # Performance-Based Monitoring (PBM)
+            # Special Education Monitoring Results Status
+            # A = Completed: Noncompliance Follow-up
+            # B = Completed: Routine Follow-up
+            # C = In Review
+            # D = Local Interventions Implemented
+            # E = On-Site Intervention Assigned
+            # F = Oversight/Sanction/Intervention
+            # G = Pending TEA On-Site Action
+            # H = TEA On-Site Action Completed: Noncompliance Follow-up
+            # I = TEA On-Site Action Completed: Oversight/Sanction/Intervention
+            # J = TEA On-Site Action Completed: Routine Follow-up
+            # K = Year After TEA On-Site Action: Noncompliance Follow-up
+            # L = Year After TEA On-Site Action: Routine Follow-up
+            # N = Pending Improvement Plan Resubmission
+            # O = LEA Closure
+            # P = Year After TEA On-Site Action: Pending Improvement Plan Submission
+            # Q = Year After TEA On-Site Action: Pending Report
+            # R = Charter Operations Suspended
+            yield column, {'field': 'pbm-results-status'},
         else:
             # Parse the first character to determine the level and
             # possibly the group-mean measure (for campus data).
