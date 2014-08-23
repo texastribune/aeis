@@ -26,9 +26,24 @@ def get_analyzer(aeis_file):
     return analyzer
 
 
-def analyze_column(column, analyzer, metadata=None):
+def get_analyzer_in_loop(aeis_file):
+    while True:
+        try:
+            return get_analyzer(aeis_file)
+        except RuntimeError as e:
+            traceback.print_exc()
+            time.sleep(3)
+
+            print 'reloading...'
+            try:
+                globals()['analyzers'] = reload(analyzers)
+            except SyntaxError as e:
+                traceback.print_exc()
+                continue
+
+
+def analyze_column(column, analyzer, metadata):
     analysis = {}
-    metadata = metadata if metadata is not None else {}
     pretty_metadata = pprint.pformat(metadata.get(column))
 
     position = 0
@@ -72,32 +87,37 @@ def analyze_column(column, analyzer, metadata=None):
     return analysis
 
 
+def analyze_column_in_loop(column, analyzer, metadata):
+    while True:
+        try:
+            analysis = analyze_column(column, analyzer, metadata=metadata)
+            break
+        except ValueError as e:
+            traceback.print_exc()
+            time.sleep(3)
+
+            print 'reloading...'
+            try:
+                globals()['analyzers'] = reload(analyzers)
+                analyzer = get_analyzer(aeis_file)
+            except SyntaxError as e:
+                traceback.print_exc()
+                continue
+
+    return analysis
+
+
 def analyze_columns(aeis_file, metadata=None):
     metadata = metadata if metadata is not None else {}
     columns = list(get_columns(aeis_file, metadata=metadata))
-    analyzer = get_analyzer(aeis_file)
+    analyzer = get_analyzer_in_loop(aeis_file)
 
     analyzed_columns = set()
     for column in sorted(columns):
         # Print the current column
         print '{}/{}:{}'.format(aeis_file.year, aeis_file.base_name, column)
 
-        # Get the analysis
-        while True:
-            try:
-                analysis = analyze_column(column, analyzer, metadata=metadata)
-                break
-            except ValueError as e:
-                traceback.print_exc()
-                time.sleep(3)
-
-                print 'reloading...'
-                try:
-                    globals()['analyzers'] = reload(analyzers)
-                    analyzer = get_analyzer(aeis_file)
-                except SyntaxError as e:
-                    traceback.print_exc()
-                    continue
+        analysis = analyze_column_in_loop(column, analyzer, metadata)
 
         # Print analysis
         pprint.pprint(analysis)
