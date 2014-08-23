@@ -90,12 +90,15 @@ def analyze_column(column, analyzer, metadata):
 def analyze_column_in_loop(column, analyzer, metadata):
     while True:
         try:
+            # Print the current column
+            print '{}/{}:{}'.format(aeis_file.year, aeis_file.base_name, column)
             return analyze_column(column, analyzer, metadata=metadata)
         except Exception as e:
             traceback.print_exc()
             time.sleep(3)
 
             print 'reloading...'
+
             try:
                 globals()['analyzers'] = reload(analyzers)
                 analyzer = get_analyzer(aeis_file)
@@ -111,9 +114,7 @@ def analyze_columns(aeis_file, metadata=None):
 
     analyzed_columns = set()
     for column in sorted(columns):
-        # Print the current column
-        print '{}/{}:{}'.format(aeis_file.year, aeis_file.base_name, column)
-
+        # Keep analyzing until we get it right...
         analysis = analyze_column_in_loop(column, analyzer, metadata)
 
         # Print analysis

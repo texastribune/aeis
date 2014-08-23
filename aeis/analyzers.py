@@ -66,6 +66,14 @@ def parse_two_digit_grade(grade):
 
 
 def parse_three_digit_grade(grade):
+    if grade == '311':
+        return '10-11'
+    elif grade == '411':
+        return '10-11'
+
+    if int(grade) > 12:
+        raise ValueError(grade)
+
     return str(int(grade))
 
 
@@ -988,34 +996,59 @@ analyze_tasc = analyze_taas
 
 @analyzer
 @analyzer_dsl
-def analyze_taks1(aeis_file):
+def analyze_taks(aeis_file):
     """
-    TAKS Met Standard
+    TAKS datasets.
     """
-    common_data = {
-        'field': 'taks/met-standard',
-        'language': 'non-spanish',
-    }
-    test_data = {
-        'TA': dict(common_data, test='all'),
-        'TC': dict(common_data, test='science'),
-        'TE': dict(common_data, test='english-language-arts'),
-        'TM': dict(common_data, test='mathematics'),
-        'TS': dict(common_data, test='social-studies'),
+    tests = {
+        'A': {'test': 'all'},
+        'C': {'test': 'science'},
+        'E': {'test': 'english-language-arts'},
+        'M': {'test': 'mathematics'},
+        'R': {'test': 'reading-ela'},
+        'S': {'test': 'social-studies'},
     }
 
-    return {r'(?P<group>\w)': (
-        {'group': GROUP_CODES},
-        {'(?P<grade>\w\w\w)': (
-            {'grade': parse_three_digit_grade},
-            {
-                r'(?P<test>\w\w)': (
-                    {'test': test_data},
-                    {r'(?P<year>\d\d)': {'year': parse_two_digit_year}}
-                )
-            }
-        )}
-    )}
+    return {
+        (r'(?P<group>\w)(?P<grade>\d\d\d)'
+         r'(?P<field>\w)(?P<test>\w)'
+         r'(?P<year>\d\d)'): ({
+            'group': GROUP_CODES,
+            'grade': parse_three_digit_grade,
+            'field': {
+                'C': {'field': 'taks/commended'},
+                'F': {'field': 'taks/failed-previous-year'},
+                'M': {'field': 'taks-modified/met-standard'},
+                'T': {'field': 'taks/met-standard'},
+            },
+            'test': tests,
+            'year': parse_two_digit_year
+        }),
+        (r'(?P<group>\w)'
+         r'(?P<field>TSI)(?P<test>\w)'
+         r'(?P<year>\d\d)'): ({
+            'group': GROUP_CODES,
+            'grade': parse_three_digit_grade,
+            'field': {
+                'TSI': {'field': 'taks/texas-success-initiative'},
+            },
+            'test': tests,
+            'year': parse_two_digit_year
+        }),
+    }
+
+
+# Met Standard
+analyze_taks1 = analyze_taks
+
+# Met Standard and Commended
+analyze_taks2 = analyze_taks
+
+# Sum of Grades 10-11, TAKS-M Met Standard
+analyze_taks3 = analyze_taks
+
+# Progress of TAKS Failers, Texas Success Initiative
+analyze_taks4 = analyze_taks
 
 
 def get_or_create_metadata(root):
