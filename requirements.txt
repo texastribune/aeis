@@ -1,3 +1,4 @@
 csvkit==0.6.1
 pyquery==1.2.4
 requests==1.2.3
+elasticsearch==1.2.0
