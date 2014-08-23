@@ -132,7 +132,7 @@ def analyzer(analyze_function):
         yield '', {'version': aeis_file.year}
 
         # Some columns are words that signify a special field
-        if column.lower() in ('campus', 'district', 'region'):
+        if column.lower() in ('campus', 'district', 'region', 'region_n'):
             yield column, {'field': 'key'}
         elif column.lower() in ('campname', 'distname'):
             yield column, {'field': 'name'}
