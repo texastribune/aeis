@@ -202,8 +202,8 @@ def analyzer(analyze_function):
             # at the campus and district levels.
             if remainder.lower() == 'suprate':
                 yield remainder, {
-                    'field': ('accountability-rating/'
-                              'supplemental-acknowledgment')
+                    'field': ('accountability-rating'
+                              '-supplemental-acknowledgment')
                 }
             elif remainder.lower() == '_rating':
                 yield remainder, {'field': 'accountability-rating'}
@@ -358,27 +358,27 @@ def analyze_fin(aeis_file):
     # Primer on public schools finance and tax rates:
     # http://www.lbb.state.tx.us/Other_Pubs/Financing%20Public%20Education%20in%20Texas%20Kindergarten%20through%20Grade%20Twelve%20Legislative%20Primer-Second%20Edition.pdf
     return {
-        'PFFENDT': {'field': 'fund-balance/ending'},
-        'PFFENDP': {'field': 'fund-balance/percent-of-expenditure'},
+        'PFFENDT': {'field': 'fund-balance.ending'},
+        'PFFENDP': {'field': 'fund-balance.percent-of-expenditure'},
         'PFE': (  # Expenditure by function
             {'field': 'expenditure'},
-            {'OPR': {'field': 'expenditure/total', 'function': 'operating'}},
-            {'OPO': {'field': 'expenditure/total', 'object': 'operating'}},
+            {'OPR': {'field': 'expenditure.total', 'function': 'operating'}},
+            {'OPO': {'field': 'expenditure.total', 'object': 'operating'}},
             {
                 'ALL': {'function': 'all'},
-                'ADI': {'function': 'administration/instructional'},
-                'ADC': {'function': 'administration/central'},
-                'ADS': {'function': 'administration/campus'},
+                'ADI': {'function': 'administration.instructional'},
+                'ADC': {'function': 'administration.central'},
+                'ADS': {'function': 'administration.campus'},
                 'CAP': {'function': 'capital-outlay'},
                 'COM': {'function': 'community-services'},
                 'DEB': {'function': 'debt-service'},
-                'INR': {'function': 'administration/instruction-related'},
+                'INR': {'function': 'administration.instruction-related'},
                 'INS': {'function': 'instruction'},
                 'NOF': {'function': 'non-operating'},
                 'OPF': {'function': 'operating'},
                 'OTH': {'function': 'other'},
                 'OTR': {'function': 'other'},
-                'SUP': {'function': 'support-services/student'},
+                'SUP': {'function': 'support-services.student'},
             },
             {
                 'NOO': {'object-type': 'non-operating'},
@@ -411,7 +411,7 @@ def analyze_fin(aeis_file):
             }
         ),
         'PFCR': (
-            {'field': 'revenue/cooperative'},
+            {'field': 'revenue.cooperative'},
             {
                 'TO': {'source': 'all'},
                 'LO': {'source': 'local'},
@@ -420,7 +420,7 @@ def analyze_fin(aeis_file):
             }
         ),
         'PFCE': (
-            {'field': 'expenditure/cooperative'},
+            {'field': 'expenditure.cooperative'},
             {
                 'TO': {'function': 'all'},
                 'IN': {'function': 'instructional'},
@@ -440,9 +440,9 @@ def analyze_fin(aeis_file):
                 'TOT': {'rate': 'total'},
             }
         ),
-        'PFVTOT': {'field': 'tax/property-value/total'},
+        'PFVTOT': {'field': 'tax.property-value.total'},
         'PFV': (
-            {'field': 'tax/property-value'},
+            {'field': 'tax.property-value'},
             {
                 'BUS': {'category': 'business'},
                 'LAN': {'category': 'land'},
@@ -452,7 +452,7 @@ def analyze_fin(aeis_file):
             }
         ),
         'PFX': (
-            {'field': 'expenditure/exclusion'},  # ???
+            {'field': 'expenditure.exclusion'},  # ???
             {
                 'SSA': {'exclusion': 'ssa-and-payments-to-fiscal-agents'},
                 'EAD': {'exclusion': 'fund-31'},  # ???
@@ -466,33 +466,16 @@ def analyze_fin(aeis_file):
         )
     }
 
-    # Exclusion fields from prior analysis
-    # "exclusion_fields = [\n",
-    # "      (u'ALL', 'expenditure/total/excluded'),\n",
-    # "      (u'AWLH', 'expenditure/by-exclusion/wealth-equalization-transfers'),\n",
-    # "      (u'EAE', 'expenditure/by-exclusion/adult-education-programs'),\n",
-    # "      (u'ECP', 'expenditure/by-exclusion/capital-projects-funds'),\n",
-    # "      (u'EIF', 'expenditure/by-exclusion/tax-increment-fund'),\n",
-    # "      (u'ESS', 'expenditure/by-exclusion/shared-services-arrangements-funds'),\n",
-    # "      (u'GWLH', 'expenditure/by-exclusion/wealth-equalization-transfers'),\n",
-    # "      (u'RCA', 'revenue/by-exclusion/fund-60'),\n",
-    # "      (u'RCP', 'revenue/by-exclusion/capital-projects-funds'),\n",
-    # "      (u'RIF', 'revenue/by-exclusion/tax-increment-fund'),\n",
-    # "      (u'RSS', 'revenue/by-exclusion/shared-services-arrangements-funds'),\n",
-    # "      (u'SSA', 'expenditure/by-exclusion/ssa-payments-to-fiscal-agents'),\n",
-    # "      (u'TUI', 'expenditure/by-exclusion/tuition-transfers-for-grades-not-offered'),\n",
-    # "]"
-
 
 @analyzer
 @analyzer_dsl
 def analyze_fin_2012(aeis_file):
     return {
-        'PFFENDT': {'field': 'fund-balance/ending'},
-        'PFFENDP': {'field': 'fund-balance/percent-of-expenditure'},
-        'PFVTOT': {'field': 'tax/property-value/total'},
+        'PFFENDT': {'field': 'fund-balance.ending'},
+        'PFFENDP': {'field': 'fund-balance.percent-of-expenditure'},
+        'PFVTOT': {'field': 'tax.property-value.total'},
         'PFCR': (
-            {'field': 'revenue/cooperative'},
+            {'field': 'revenue.cooperative'},
             {
                 'TO': {'source': 'all'},
                 'LO': {'source': 'local'},
@@ -501,7 +484,7 @@ def analyze_fin_2012(aeis_file):
             }
         ),
         'PFCE': (
-            {'field': 'expenditure/cooperative'},
+            {'field': 'expenditure.cooperative'},
             {
                 'TO': {'function': 'all'},
                 'IN': {'function': 'instructional'},
@@ -535,16 +518,16 @@ def analyze_fin_2012(aeis_file):
                     'function': {
                         # Function spending
                         'ALL': {'function': 'all'},
-                        'ADI': {'function': 'administration/instructional'},
-                        'ADC': {'function': 'administration/central'},
-                        'ADS': {'function': 'administration/leadership'},
+                        'ADI': {'function': 'administration.instructional'},
+                        'ADC': {'function': 'administration.central'},
+                        'ADS': {'function': 'administration.leadership'},
                         'COC': {'function': \
                             'cocurricular-extracurricular-activities'},
                         'COF': {'function': 'community-services'},
                         'DAT': {'function': 'community-services'},
                         'DEB': {'function': 'debt-service'},
                         'FOO': {'function': 'food-services'},
-                        'INS': {'function': 'administration/leadership'},
+                        'INS': {'function': 'administration.leadership'},
                         'OPF': {'function': 'operating-total'},
                         'OPR': {'function': 'operating-total'},
                         'OTH': {'function': 'other'},
@@ -553,7 +536,7 @@ def analyze_fin_2012(aeis_file):
                         'REL': {'function': 'instruction-related'},
                         'SEC': {'function': \
                             'security-and-monitoring-services'},
-                        'SUP': {'function': 'support-services/student'},
+                        'SUP': {'function': 'support-services.student'},
                         'TRA': {'function': 'student-transportation'},
                         # Object spending
                         'CAP': {'object': 'capital-outlay'},
@@ -564,19 +547,19 @@ def analyze_fin_2012(aeis_file):
             {
                 # Pre-2012
                 'ALL': {'function': 'all'},
-                'ADI': {'function': 'administration/instructional'},
-                'ADC': {'function': 'administration/central'},
-                'ADS': {'function': 'administration/campus'},
+                'ADI': {'function': 'administration.instructional'},
+                'ADC': {'function': 'administration.central'},
+                'ADS': {'function': 'administration.campus'},
                 'CAP': {'function': 'capital-outlay'},
                 'COM': {'function': 'community-services'},
                 'DEB': {'function': 'debt-service'},
-                'INR': {'function': 'administration/instruction-related'},
+                'INR': {'function': 'administration.instruction-related'},
                 'INS': {'function': 'instruction'},
                 'NOF': {'function': 'non-operating'},
                 'OPF': {'function': 'operating'},
                 'OTH': {'function': 'other'},
                 'OTR': {'function': 'other'},
-                'SUP': {'function': 'support-services/student'},
+                'SUP': {'function': 'support-services.student'},
             }
         ),
         'PFT': (
@@ -656,7 +639,7 @@ def analyze_fin_2012(aeis_file):
             }
         ),
         'PFV': (
-            {'field': 'tax/property-value'},
+            {'field': 'tax.property-value'},
             {
                 'BUS': {'category': 'business'},
                 'LAN': {'category': 'land'},
@@ -666,7 +649,7 @@ def analyze_fin_2012(aeis_file):
             }
         ),
         'PFX': (
-            {'field': 'expenditure/exclusion'},  # ???
+            {'field': 'expenditure.exclusion'},  # ???
             {
                 # 2012 and later
                 r'(?P<fund>A|G)(?P<exclusion>\w\w\w)': ({
@@ -761,22 +744,22 @@ def analyze_othr(aeis_file, remainder):
         yield '0CS', {'field': 'sat', 'measure': 'average'}
     elif remainder.startswith('0CC'):
         rate_means_percent = True
-        yield '0CC', {'field': 'college-admissions/at-or-above-criteria'}
+        yield '0CC', {'field': 'college-admissions.at-or-above-criteria'}
     elif remainder.startswith('0CT'):
         rate_means_percent = True
-        yield '0CT', {'field': 'college-admissions/taking-act-or-sat'}
+        yield '0CT', {'field': 'college-admissions.taking-act-or-sat'}
     elif remainder.startswith('0MM'):
-        yield '0MM', {'field': 'dropouts/method-i'}
+        yield '0MM', {'field': 'dropouts.method-i'}
     elif remainder.startswith('0DR'):
-        yield '0DR', {'field': 'dropouts/method-ii'}
+        yield '0DR', {'field': 'dropouts.method-ii'}
     elif remainder.startswith('0EQ'):
         yield '0EQ', {'field': 'taas-tasp-equivalence'}
     elif remainder.startswith('0BK'):
-        yield '0BK', {'field': 'ap-ib/students-above-criterion'}
+        yield '0BK', {'field': 'ap-ib.students-above-criterion'}
     elif remainder.startswith('0BS'):
-        yield '0BS', {'field': 'ap-ib/scores-above-criterion'}
+        yield '0BS', {'field': 'ap-ib.scores-above-criterion'}
     elif remainder.startswith('0BT'):
-        yield '0BT', {'field': 'ap-ib/students-taking-test'}
+        yield '0BT', {'field': 'ap-ib.students-taking-test'}
     elif remainder.startswith('0GH'):
         yield '0GH', {'field': 'graduates', 'program': 'recommended'}
 
@@ -1056,7 +1039,7 @@ def analyze_taas(aeis_file):
         {r'(?P<grade>[0-8]|X|Z)': (
             {'grade': parse_one_digit_grade},
             {r'(?P<field>T)': (
-                {'field': {'T': 'taas/passing'}},
+                {'field': {'T': 'taas.passing'}},
                 {r'(?P<test>A|M|R|W)': (
                     {'test': {
                         'A': {'test': 'all'},
@@ -1079,16 +1062,16 @@ def analyze_cad(aeis_file):
         {'group': GROUP_CODES},
         {'(?P<metric>\w\w\w)': (
             {'metric': {
-                'CRR': {'field': 'college-admissions/college-ready',
+                'CRR': {'field': 'college-admissions.college-ready',
                         'subject': 'reading'},
-                'CRM': {'field': 'college-admissions/college-ready',
+                'CRM': {'field': 'college-admissions.college-ready',
                         'subject': 'math'},
-                'CRB': {'field': 'college-admissions/college-ready',
+                'CRB': {'field': 'college-admissions.college-ready',
                         'subject': 'both'},
                 '0CA': {'field': 'act', 'measure': 'average'},
                 '0CS': {'field': 'sat', 'measure': 'average'},
-                '0CT': {'field': 'college-admissions/taking-act-or-sat'},
-                '0CC': {'field': 'college-admissions/above-criteria'}}},
+                '0CT': {'field': 'college-admissions.taking-act-or-sat'},
+                '0CC': {'field': 'college-admissions.above-criteria'}}},
                 # ??? Is "above-criteria" equivalent to "at-or-above-criteria"
             {r'(?P<year>\d\d)': {'year': parse_two_digit_year}}
         )}
@@ -1106,16 +1089,16 @@ def analyze_comp(aeis_file):
         {'(?P<metric>[A-Z]C[4-5]X?)': (
             {'metric': {
                 # Region
-                'DC4': {'field': 'completion/longitudinal-dropout'},
-                'EC4': {'field': 'completion/ged-recipients'},
-                'NC4': {'field': 'completion/continuers'},
+                'DC4': {'field': 'completion.longitudinal-dropout'},
+                'EC4': {'field': 'completion.ged-recipients'},
+                'NC4': {'field': 'completion.continuers'},
                 # District/campus
-                'DC4X': {'field': 'completion/longitudinal-dropout'},
-                'EC4X': {'field': 'completion/ged-recipients'},
-                'NC4X': {'field': 'completion/continuers'},
-                'GC4X': {'field': 'completion/four-year-graduates'},
-                'GC4': {'field': 'completion/four-year-graduates'},
-                'GC5': {'field': 'completion/five-year-graduates'}}},
+                'DC4X': {'field': 'completion.longitudinal-dropout'},
+                'EC4X': {'field': 'completion.ged-recipients'},
+                'NC4X': {'field': 'completion.continuers'},
+                'GC4X': {'field': 'completion.four-year-graduates'},
+                'GC4': {'field': 'completion.four-year-graduates'},
+                'GC5': {'field': 'completion.five-year-graduates'}}},
             {r'(?P<year>\d\d)': {'year': parse_two_digit_year}}
         )}
     )}
@@ -1148,10 +1131,10 @@ def analyze_taks(aeis_file):
             'group': GROUP_CODES,
             'grade': parse_three_digit_grade,
             'field': {
-                'C': {'field': 'taks/commended'},
-                'F': {'field': 'taks/failed-previous-year'},
-                'M': {'field': 'taks-modified/met-standard'},
-                'T': {'field': 'taks/met-standard'},
+                'C': {'field': 'taks.commended'},
+                'F': {'field': 'taks.failed-previous-year'},
+                'M': {'field': 'taks.modified.met-standard'},
+                'T': {'field': 'taks.met-standard'},
             },
             'test': tests,
             'year': parse_two_digit_year
@@ -1162,8 +1145,8 @@ def analyze_taks(aeis_file):
             'group': GROUP_CODES,
             'grade': parse_three_digit_grade,
             'field': {
-                'CT': {'field': 'taks/cumulative'},  # ???
-                'TSI': {'field': 'taks/texas-success-initiative'},
+                'CT': {'field': 'taks.cumulative'},  # ???
+                'TSI': {'field': 'taks.texas-success-initiative'},
             },
             'test': tests,
             'year': parse_two_digit_year
