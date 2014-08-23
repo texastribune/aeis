@@ -1,4 +1,9 @@
 """
+Overview
+---
+
+http://ritter.tea.state.tx.us/perfreport/aeis/about.aeis.html
+
 Events
 ---
 
@@ -8,8 +13,9 @@ Events
 Glossaries
 ---
 
-http://ritter.tea.state.tx.us/perfreport/src/2011/definitions.html
+http://ritter.tea.state.tx.us/perfreport/aeis/2011/glossary.html
 
+http://ritter.tea.state.tx.us/perfreport/src/2011/definitions.html
 
 Debt allocation
 ---
@@ -827,6 +833,10 @@ def analyze_staf(aeis_file):
         ),
         'PS': (
             {'field': 'staff'},
+            {
+                # District-only measure
+                'AINHP': {'field': 'instructional-staff-percent'}
+            },
             {
                 'T': (
                     {'role': 'teachers'},
