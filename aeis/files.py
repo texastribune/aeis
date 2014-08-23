@@ -57,6 +57,18 @@ class AEISFile(object):
             if os.path.exists(layout_path):
                 self.layout_path = layout_path
 
+        # Set file level
+        if self.base_name.startswith('s'):
+            self.level = 'state'
+        elif self.base_name.startswith('r'):
+            self.level = 'region'
+        elif self.base_name.startswith('d'):
+            self.level = 'district'
+        elif self.base_name.startswith('c'):
+            self.level = 'campus'
+        else:
+            raise ValueError(self.base_name)
+
     def __repr__(self):
         return '<%d %s>' % (self.year, self.file_name)
 
