@@ -90,8 +90,7 @@ def analyze_column(column, analyzer, metadata):
 def analyze_column_in_loop(column, analyzer, metadata):
     while True:
         try:
-            analysis = analyze_column(column, analyzer, metadata=metadata)
-            break
+            return analyze_column(column, analyzer, metadata=metadata)
         except Exception as e:
             traceback.print_exc()
             time.sleep(3)
@@ -103,8 +102,6 @@ def analyze_column_in_loop(column, analyzer, metadata):
             except SyntaxError as e:
                 traceback.print_exc()
                 continue
-
-    return analysis
 
 
 def analyze_columns(aeis_file, metadata=None):
