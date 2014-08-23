@@ -130,6 +130,7 @@ def analyzer(analyze_function):
     @functools.wraps(analyze_function)
     def analyze(aeis_file, column):
         yield '', {'version': aeis_file.year}
+        yield '', {'key': column}
 
         # Some columns are words that signify a special field
         if column.lower() in ('campus', 'district', 'region', 'region_n'):
