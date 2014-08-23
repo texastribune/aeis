@@ -1,3 +1,5 @@
+import json
+import logging
 import pprint
 import sys
 import time
@@ -7,6 +9,22 @@ from aeis.analyzers import get_or_create_metadata
 from aeis.fields import get_columns
 from aeis.files import get_files
 from aeis import analyzers
+
+
+logging.basicConfig()
+logger = logging.getLogger('aeis')
+
+if '--debug' in sys.argv:  # XXX
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
+
+
+def sleep_or_raise():
+    if '--reload' not in sys.argv:  # XXX
+        raise
+    else:
+        time.sleep(3)
 
 
 def get_analyzer(aeis_file):
@@ -32,10 +50,10 @@ def get_analyzer_in_loop(aeis_file):
             return get_analyzer(aeis_file)
         except RuntimeError as e:
             traceback.print_exc()
-            time.sleep(3)
+            sleep_or_raise()
 
-            print 'reloading...'
             try:
+                logger.info('reloading analyzers...')
                 globals()['analyzers'] = reload(analyzers)
             except SyntaxError as e:
                 traceback.print_exc()
@@ -49,7 +67,8 @@ def analyze_column(column, analyzer, metadata):
     position = 0
     remainder = column
     for partial, data in analyzer(aeis_file, remainder):
-        print repr(partial), repr(data)
+        logger.debug('partial: %r', repr(partial))
+        logger.debug('data: %r', repr(data))
         try:
             analysis.update(data)
         except ValueError:
@@ -91,15 +110,18 @@ def analyze_column_in_loop(column, analyzer, metadata):
     while True:
         try:
             # Print the current column
-            print '{}/{}:{}'.format(aeis_file.year, aeis_file.base_name, column)
+            logger.info('{}/{}:{}'.format(
+                aeis_file.year,
+                aeis_file.base_name,
+                column
+            ))
             return analyze_column(column, analyzer, metadata=metadata)
         except Exception as e:
             traceback.print_exc()
-            time.sleep(3)
-
-            print 'reloading...'
+            sleep_or_raise()
 
             try:
+                logger.info('reloading analyzers...')
                 globals()['analyzers'] = reload(analyzers)
                 analyzer = get_analyzer(aeis_file)
             except SyntaxError as e:
@@ -117,18 +139,21 @@ def analyze_columns(aeis_file, metadata=None):
         # Keep analyzing until we get it right...
         analysis = analyze_column_in_loop(column, analyzer, metadata)
 
-        # Print analysis
-        pprint.pprint(analysis)
+        # Report analysis
+        logger.debug(pprint.pformat(analysis))
+
+        if '--json' in sys.argv:  # XXX
+            print json.dumps(analysis)
 
         # Report progress
         analyzed_columns.add(column)
-        print '{}/{}...'.format(len(analyzed_columns), len(columns))
+        logger.debug('%d/%d...', len(analyzed_columns), len(columns))
 
 
 if __name__ == '__main__':
     root = sys.argv[1]
     metadata = get_or_create_metadata(root)
-    files = sorted(get_files(root), key=lambda f: f.year, reverse=True)
+    files = sorted(get_files(root), key=lambda f: f.year, reverse=False)
 
     # Make another pass for analysis
     for aeis_file in files:
