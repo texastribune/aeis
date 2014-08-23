@@ -1,3 +1,21 @@
+"""
+Events
+---
+
+1999-??-??: Existing Debt Allotment (EDA) created by the Texas Legislature
+
+
+Glossaries
+---
+
+http://ritter.tea.state.tx.us/perfreport/src/2011/definitions.html
+
+
+Debt allocation
+---
+
+http://www.tea.state.tx.us/index2.aspx?id=7724&menu_id=645&menu_id2=789
+"""
 import itertools
 import functools
 import os
@@ -428,7 +446,6 @@ def analyze_fin(aeis_file):
 @analyzer
 @analyzer_dsl
 def analyze_fin_2012(aeis_file):
-    # TODO: refactor
     return {
         'PFFENDT': {'field': 'fund-balance/ending'},
         'PFFENDP': {'field': 'fund-balance/percent-of-expenditure'},
@@ -451,29 +468,59 @@ def analyze_fin_2012(aeis_file):
                 'NO': {'function': 'non-operating-objects'},
             }
         ),
-        'PFE': (  # Expenditure by function
+        'PFE': (  # Expenditure by function/object
             {'field': 'expenditure'},
-            {'OPR': {'field': 'expenditure/total', 'function': 'operating'}},
-            {'OPO': {'field': 'expenditure/total', 'object': 'operating'}},
             {
-                # 2012 and later (all funds)
-                'AALL': {'function': 'all'},
-                'AADI': {'function': 'administration/instructional'},
-                'AADS': {'function': 'administration/leadership'},
-                'AINS': {'function': 'administration/leadership'},
-                'AOPR': {'function': 'operating-total'},
-                'AOTH': {'function': 'other'},
-                'AREL': {'function': 'instruction-related'},
-                'ASUP': {'function': 'support-services/student'},
-                # 2012 and later (general fund)
-                'GALL': {'function': 'all', 'fund': 'general'},
-                'GADI': {'function': 'administration/instructional', 'fund': 'general'},
-                'GADS': {'function': 'administration/leadership', 'fund': 'general'},
-                'GINS': {'function': 'administration/leadership', 'fund': 'general'},
-                'GOPR': {'function': 'operating-total', 'fund': 'general'},
-                'GOTH': {'function': 'other', 'fund': 'general'},
-                'GREL': {'function': 'instruction-related', 'fund': 'general'},
-                'GSUP': {'function': 'support-services/student', 'fund': 'general'},
+                'OPR': {'function': 'total-operating'}
+            },
+            {
+                'OPO': {'object': 'total-operating'},
+                'NOO': {'object': 'non-operating'},
+                'OOP': {'object': 'other-operating'},
+                'PAY': {'object': 'payroll'},
+                'PLA': {'object': 'plant-services'},
+            },
+            {
+                # "Instructional Expenditure Ratio"
+                'IER': {'function': 'instruction'},
+            },
+            {
+                # 2012 and later
+                r'(?P<fund>A|G)(?P<function>\w\w\w)': ({
+                    'fund': {
+                        'A': {'fund': 'all'},
+                        'G': {'fund': 'general'},
+                    },
+                    'function': {
+                        # Function spending
+                        'ALL': {'function': 'all'},
+                        'ADI': {'function': 'administration/instructional'},
+                        'ADC': {'function': 'administration/central'},
+                        'ADS': {'function': 'administration/leadership'},
+                        'COC': {'function': \
+                            'cocurricular-extracurricular-activities'},
+                        'COF': {'function': 'community-services'},
+                        'DAT': {'function': 'community-services'},
+                        'DEB': {'function': 'debt-service'},
+                        'FOO': {'function': 'food-services'},
+                        'INS': {'function': 'administration/leadership'},
+                        'OPF': {'function': 'operating-total'},
+                        'OPR': {'function': 'operating-total'},
+                        'OTH': {'function': 'other'},
+                        'PAY': {'function': 'payroll'},
+                        'PLA': {'function': 'plant-services'},
+                        'REL': {'function': 'instruction-related'},
+                        'SEC': {'function': \
+                            'security-and-monitoring-services'},
+                        'SUP': {'function': 'support-services/student'},
+                        'TRA': {'function': 'student-transportation'},
+                        # Object spending
+                        'CAP': {'object': 'capital-outlay'},
+                        'OOP': {'object': 'other-operating'},
+                    }
+                }),
+            },
+            {
                 # Pre-2012
                 'ALL': {'function': 'all'},
                 'ADI': {'function': 'administration/instructional'},
@@ -489,14 +536,6 @@ def analyze_fin_2012(aeis_file):
                 'OTH': {'function': 'other'},
                 'OTR': {'function': 'other'},
                 'SUP': {'function': 'support-services/student'},
-            },
-            {
-                'NOO': {'object-type': 'non-operating'},
-                'OOP': {'object-type': 'other-operating'},
-            },
-            {
-                'PAY': {'object': 'payroll'},
-                'PLA': {'object': 'plant-services'},
             }
         ),
         'PFT': (
@@ -509,6 +548,9 @@ def analyze_fin_2012(aeis_file):
                 'INS': {'rate': 'interest-and-sinking'},
                 'MNO': {'rate': 'maintenance-and-operations'},
                 'TOT': {'rate': 'total'},
+                # 2012 and later
+                'AIS': {'rate': 'interest-and-sinking'},
+                'AMO': {'rate': 'maintenance-and-operations'},
             }
         ),
         'PFP': (  # Expenditure by program
@@ -548,6 +590,23 @@ def analyze_fin_2012(aeis_file):
         'PFR': (
             {'field': 'revenue'},
             {
+                # 2012 and later
+                r'(?P<fund>A|G)(?P<function>\w\w\w)': ({
+                    'fund': {
+                        'A': {'fund': 'all'},
+                        'G': {'fund': 'general'},
+                    },
+                    'function': {
+                        'ALL': {'source': 'all'},
+                        'FED': {'source': 'federal'},
+                        'LOC': {'source': 'local'},
+                        'OTH': {'source': 'other-local-and-intermediate'},
+                        'STA': {'source': 'state'},
+                        'SFS': {'source': 'state-fiscal-stabilization-fund'},
+                    },
+                })
+            },
+            {
                 'ALL': {'source': 'all'},
                 'FED': {'source': 'federal'},
                 'LOC': {'source': 'local'},
@@ -567,6 +626,27 @@ def analyze_fin_2012(aeis_file):
         ),
         'PFX': (
             {'field': 'expenditure/exclusion'},  # ???
+            {
+                # 2012 and later
+                r'(?P<fund>A|G)(?P<exclusion>\w\w\w)': ({
+                    'fund': {
+                        'A': {'fund': 'all'},
+                        'G': {'fund': 'general'},
+                    },
+                    'exclusion': {
+                        'SSA': {'exclusion': \
+                            'ssa-and-payments-to-fiscal-agents'},
+                        'EAD': {'exclusion': 'fund-31'},  # ???
+                        'ECA': {'exclusion': 'fund-60'},  # ???
+                        'RCA': {'exclusion': 'fund-60'},  # ???
+                        'EAE': {'exclusion': 'adult-education-programs'},
+                        'RAD': {'exclusion': 'adult-education-programs'},
+                        'ECP': {'exclusion': 'capital-projects'},  # ???
+                        'WLH': {'exclusion': \
+                            'wealth-equalization-transfers'},  # ???
+                    }
+                }),
+            },
             {
                 'SSA': {'exclusion': 'ssa-and-payments-to-fiscal-agents'},
                 'EAD': {'exclusion': 'fund-31'},  # ???
