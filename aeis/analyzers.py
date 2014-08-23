@@ -1104,6 +1104,11 @@ def analyze_comp(aeis_file):
         {'group': GROUP_CODES},
         {'(?P<metric>[A-Z]C[4-5]X?)': (
             {'metric': {
+                # Region
+                'DC4': {'field': 'completion/longitudinal-dropout'},
+                'EC4': {'field': 'completion/ged-recipients'},
+                'NC4': {'field': 'completion/continuers'},
+                # District/campus
                 'DC4X': {'field': 'completion/longitudinal-dropout'},
                 'EC4X': {'field': 'completion/ged-recipients'},
                 'NC4X': {'field': 'completion/continuers'},
