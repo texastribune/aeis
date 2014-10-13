@@ -4,6 +4,7 @@ import pprint
 import sys
 
 from elasticsearch import Elasticsearch
+from elasticsearch.client import IndicesClient
 from elasticsearch.helpers import streaming_bulk
 
 from aeis.analyzers import get_or_create_analysis
@@ -47,6 +48,17 @@ def get_documents(root):
     analysis = get_or_create_analysis(root)
     for aeis_file in files:
         logger.info(aeis_file)
+        if aeis_file.year < 2012:
+            continue
+        elif aeis_file.level == 'campus':
+            continue
+        elif (aeis_file.level == 'district'
+              and aeis_file.root_name in ('cad', 'comp',)
+                #'fin', 'othr', 'ref', 'staf', 'stud',
+                # 'taks1', 'taks2', 'taks3'
+        ):
+            continue
+
         for i, record in enumerate(aeis_file):
             key = get_cdc_code(record, level=aeis_file.level)
             for column, value in record.items():
@@ -84,7 +96,24 @@ if __name__ == '__main__':
     files = (f for f in files if f.year in (1994, 2012))
     documents = get_documents(root)
 
-    # Index to Elasticsearch
+    # Configure Elasticsearch index
     es = Elasticsearch('http://54.200.56.1:9200')
-    for result in streaming_bulk(es, documents, raise_on_error=True):
+    indices = IndicesClient(es)
+    # indices.delete('aeis')
+    # indices.create(index='aeis', body={
+    #     'index': {
+    #         'mapping': {
+    #             'ignore_malformed': True,
+    #             'coerce': False
+    #         }
+    #     }
+    # })
+
+    # Index to Elasticsearch
+    for result in streaming_bulk(
+        es,
+        documents,
+        chunk_size=100,
+        raise_on_error=True
+    ):
         pass

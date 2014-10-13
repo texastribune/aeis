@@ -911,7 +911,7 @@ def analyze_staf(aeis_file):
                             {
                                 'code': {
                                     'MI': {'group': 'minority'},
-                                    'TO': {'field': 'staff/total'},
+                                    'TO': {'field': 'staff.total'},
                                     'CO': {'program': 'compensatory'},
                                 }
                             },
