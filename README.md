@@ -4,6 +4,11 @@ AEIS
 Tools for analyzing data from the **Academic Excellence Indicator System** and the **Texas Academic Performance Report**.
 
 
+For the 2012-2013 school year and later, see the Texas Academic Performance Reports.
+
+> The TAPRs were previously known as the Academic Excellence Indicator System (AEIS) Reports. Those reports were published from 1990-91 to 2011-12. They may be found at the AEIS Archive.
+
+
 ### How to Use
 
 To scrape and download all data from AEIS:

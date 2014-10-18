@@ -1,6 +1,10 @@
-# Downloads all data from the TEA AEIS report site
-# Usage: python scrape_aeis.py <path_to_output_dir>
+"""
+Downloads all data from the TEA report site.
 
+Usage: python -m aeis.scrape <path_to_output_dir>
+"""
+
+import itertools
 import os
 import re
 import sys
@@ -10,11 +14,16 @@ from zipfile import ZipFile, BadZipfile
 from pyquery import PyQuery
 import requests
 
+
 BASE_URL = 'http://ritter.tea.state.tx.us'
 DOWNLOAD_PATTERN = 'http://ritter.tea.state.tx.us/perfreport/aeis/%d/%s'
 PRE_97_DOWNLOAD_PAGE = 'download.html'
 POST_97_DOWNLOAD_PAGE = 'DownloadData.html'
 FILENAME_RE = re.compile(r'filename="?(.*)"?')
+
+TAPR_BASE_URL = 'http://ritter.tea.state.tx.us'
+TAPR_DOWNLOAD_PATH = '/cgi/sas/broker'
+TAPR_FORM_PATH = '/perfreport/tapr/2013/download/DownloadData.html'
 
 
 def url_for_year(year):
@@ -193,8 +202,49 @@ def scrape_2012_references(data_dir):
             fp.write(response.content)
 
 
+def scrape_2013(data_dir):
+    """
+    Scrape the raw data from the 2012-2013 TAPR.
+    """
+    year = 2013
+    download_url = '{}{}'.format(TAPR_BASE_URL, TAPR_DOWNLOAD_PATH)
+    form_url = '{}{}'.format(TAPR_BASE_URL, TAPR_FORM_PATH)
+    levels = ['S']  # ['C', 'D', 'R', 'S']
+    form_data = {
+        # Service
+        '_service': 'marykay',
+        '_program': 'perfrept.perfmast.sas',
+        '_debug': '0',
+        'prgopt': '2013/tapr/tapr_download.sas',
+        # Version
+        'year4': '2013',
+        'year2': '13',
+        # Dataset
+        'sumlev': 'C',
+        'setpick': 'STAAR1'
+    }
+
+    # Get a list of available datasets
+    response = requests.get(form_url)
+    pq = PyQuery(response.content)
+    selection = pq.find('input[name=setpick]')
+    datasets = [o.attrib['value'] for o in selection]
+
+    # Download all available datasets
+    for level, dataset in itertools.product(levels, datasets):
+        print (level, dataset)
+        if level == 'S' and dataset == 'REF':
+            # "Reference data are not available for state."
+            continue
+
+        form_data.update(sumlev=level, setpick=dataset)
+        response = requests.post(download_url, form_data)
+        save_file(data_dir, year, response)
+
+
 if __name__ == '__main__':
     data_dir = sys.argv[1]
     scrape_pre_2012(data_dir)
     scrape_2012(data_dir)
     scrape_2012_references(data_dir)
+    scrape_2013(data_dir)
