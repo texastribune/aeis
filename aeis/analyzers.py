@@ -31,7 +31,7 @@ import shelve
 import sre_constants
 
 from .files import get_files
-from .fields import get_columns
+from .fields import get_columns, get_extra_metadata
 
 
 GROUP_CODES = {
@@ -1183,6 +1183,9 @@ def get_or_create_metadata(root):
     for aeis_file in aeis_files:
         for column in get_columns(aeis_file, metadata=metadata):
             pass
+
+    # XXX, the 2013 metadata is totally disjoint from any file name
+    get_extra_metadata(root, metadata)
 
     return metadata
 
