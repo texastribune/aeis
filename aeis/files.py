@@ -22,9 +22,9 @@ class AEISFile(object):
     def __init__(self, path, format='dat'):
         self.path = path
         self.directory = os.path.dirname(path)
-        self.base_name = os.path.basename(self.path)
+        self.base_name = os.path.basename(self.path).lower()
         self.file_name, _ = os.path.splitext(self.base_name)
-        self.format = format
+        self.format = format if format != 'txt' else 'dat'
 
         # Parse year from path
         year_dir = os.path.dirname(path)
@@ -32,7 +32,7 @@ class AEISFile(object):
         self.year = year
 
         # Derive `root_name` from the common portion of the base name
-        root_name = self.file_name
+        root_name = self.file_name.lower()
         for old_prefix, new_prefix in (
             ('stat', 's'),
             ('dist', 'd'),
@@ -47,11 +47,13 @@ class AEISFile(object):
                 root_name = root_name.replace(old_prefix, new_prefix, 1)
                 break
 
+        # Set normalized root names
         self.root_name = root_name[1:]
+        self.root_name_with_level = root_name
 
         # Parse layout
         self.layout_path = None
-        if format == 'dat':
+        if self.format == 'dat':
             file_name = os.path.splitext(self.base_name)[0]
             layout_path = os.path.join(self.directory, file_name + '.lyt')
             if os.path.exists(layout_path):
@@ -93,7 +95,7 @@ def get_files(root):
     for path in glob.iglob(pattern):
         base_name = os.path.basename(path)
         name, extension = os.path.splitext(base_name)
-        if not extension in ('.dat', '.xls'):
+        if not extension in ('.dat', '.txt', '.xls'):
             continue
 
         format = extension.strip('.').lower()

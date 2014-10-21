@@ -158,8 +158,8 @@ if __name__ == '__main__':
     root = sys.argv[1]
 
     # Get files to process
-    files = sorted(get_files(root), key=lambda f: f.year, reverse=False)
-    files = (f for f in files if f.year in (1994, 2012))
+    files = sorted(get_files(root), key=lambda f: f.year, reverse=True)
+    files = (f for f in files if f.year in (1994, 2012, 2013))
 
     # Get all analyzed columns
     metadata = get_or_create_metadata(root)
