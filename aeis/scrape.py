@@ -183,7 +183,7 @@ def scrape_2012(data_dir):
             get_report(form_data, dataset, option='2012/xplore/getdata2.sas')
 
 
-def scrape_2012_references(data_dir):
+def scrape_2012_reference(data_dir):
     """
     Scrape all the reference files for the different datasets because
     the 2012 downloads don't include LYT files.
@@ -242,9 +242,35 @@ def scrape_2013(data_dir):
         save_file(data_dir, year, response)
 
 
+def scrape_2013_reference(data_dir):
+    """
+    Scrape all 2013 HTML reference pages.
+
+    The raw downloads don't include layout files.
+
+    """
+    # http://ritter.tea.state.tx.us/perfreport/tapr/2013/download/taprref.html
+    base_url = 'http://ritter.tea.state.tx.us/perfreport/tapr/2013/download/'
+    reference_url = base_url + 'taprref.html'
+    response = requests.get(reference_url)
+    pq = PyQuery(response.content)
+    for link in pq.find('.mainBody a'):
+        # This is just a link to another dataset, so skip it.
+        if link.text == 'Summarized PEIMS Actual Financial Data':
+            continue
+
+        document = link.attrib['href']
+        path = os.path.join(data_dir, '2013', document)
+        print path
+        response = requests.get(base_url + document)
+        with open(path, 'w') as fp:
+            fp.write(response.content)
+
+
 if __name__ == '__main__':
     data_dir = sys.argv[1]
     scrape_pre_2012(data_dir)
     scrape_2012(data_dir)
-    scrape_2012_references(data_dir)
+    scrape_2012_reference(data_dir)
     scrape_2013(data_dir)
+    scrape_2013_reference(data_dir)
