@@ -63,7 +63,19 @@ GROUP_CODES = {
     'H': {'race': 'hispanic'},
     'I': {'race': 'native-american'},
     'O': {'race': 'other'},
-    'W': {'race': 'white'}
+    'W': {'race': 'white'},
+    # 2013 Testing Groups
+    '1': {'group': 'cte.elective'},  # Elective Career and Technical Education
+    'V': {'group': 'cte'},  # Career and Technical Education
+    'D': {'group': 'non-cte'},
+    '6': {'group': 'non-special-ed'},
+    '7': {'group': 'not-at-risk'},
+    '8': {'group': 'non-ell'},
+    '8': {'group': 'non-ell'},
+    '9': {'group': 'non-migrant'},
+    'G': {'group': 'migrant'},
+    'N': {'group': 'non-educationally-disadvantaged'},
+    'P': {'group': 'second-year-monitored-ell'},
 }
 
 
@@ -71,6 +83,14 @@ TWO_DIGIT_YEAR = re.compile('\d\d')
 
 
 def parse_two_digit_year(partial):
+    years = int(partial)
+    if years > 90:
+        return 1900 + years
+    else:
+        return 2000 + years
+
+
+def parse_three_digit_year(partial):
     years = int(partial)
     if years > 90:
         return 1900 + years
@@ -1171,6 +1191,43 @@ analyze_taks4 = analyze_taks
 # Progress of Prior Year TAKS Failers, Percent Passing TAKS, Eng Lang Arts
 # District, region, and state only
 analyze_taks5 = analyze_taks
+
+
+@analyzer
+@analyzer_dsl
+def analyze_part1_2013(aeis_file):
+    """
+    2013 STAAR Participation.
+    """
+    return {
+        (r'(?P<group>\w)'
+         r'(?P<participation>00|NA|NO|NT|YA|YM|YX)(?P<test>A)'
+         r'(?P<unknown>00T)'  # ???
+         r'(?P<year>013)'
+         r'(?P<measure>R|N|D)'): ({
+            'group': GROUP_CODES,
+            'participation': {
+                '00': 'tested.total',
+                'NA': 'not-tested.absent',
+                'NO': 'not-tested.other',
+                'NT': 'not-tested.total',
+                'YA': 'tested.in-accountability-system',
+                'YM': 'tested.mobile',
+                'YX': 'tested.excluded-under-rules',
+            },
+            'test': {'A': {'test': 'all'}},
+            'unknown': {'00T': {}},
+            'year': parse_three_digit_year,
+            'measure': {
+                'R': 'ratio',
+                'N': 'numerator',
+                'D': 'denominator'
+            }
+        }),
+    }
+
+
+analyze_part2_2013 = analyze_part1_2013
 
 
 # TODO: Move to metadata.py
