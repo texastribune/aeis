@@ -1216,7 +1216,7 @@ def analyze_part1_2013(aeis_file):
                 'YX': 'tested.excluded-under-rules',
             },
             'test': {'A': {'test': 'all'}},
-            'unknown': {'00T': {}},
+            'unknown': {'00T': {'grade': '3-11'}},
             'year': parse_three_digit_year,
             'measure': {
                 'R': 'ratio',
