@@ -50,9 +50,12 @@ def get_columns(aeis_file, metadata=None):
 
 def get_extra_metadata(root, metadata):
     """
-    Get 2013 metadata for unmatched completion files.
+    Get metadata for unmatched 2013 files.
     """
     for aeis_file in DummyAEISFile.generate('comp', root, 2013):
+        get_metadata_for_file(aeis_file, metadata=metadata)
+
+    for aeis_file in DummyAEISFile.generate('othr', root, 2013):
         get_metadata_for_file(aeis_file, metadata=metadata)
 
 
@@ -71,7 +74,6 @@ def get_metadata_for_file(aeis_file, metadata):
     for pattern in patterns:
         pattern = os.path.join(aeis_file.directory, pattern)
         for path in glob.iglob(pattern):
-            print path
             if path in found_paths:
                 continue
 
@@ -85,7 +87,10 @@ def get_metadata_for_file(aeis_file, metadata):
                 metadata.setdefault(column, {})
                 meta = metadata.get(column)
                 meta.setdefault('descriptions', set())
+                meta.setdefault('files', set())
                 meta['descriptions'].add(description)
+                meta['layouts'].add(path)
+                metadata[column] = meta
 
 
 def parse_html_metadata(path):
@@ -128,11 +133,10 @@ if __name__ == '__main__':
     columns = set()
     metadata = dict()
     for aeis_file in get_files(root):
-        # if aeis_file.year < 2013: continue
         for column in get_columns(aeis_file, metadata=metadata):
             columns.add(column)
 
-    # XXX, the 2013 metadata is totally disjoint from any file name
+    # XXX, some 2013 metadata is totally disjoint from any file name
     get_extra_metadata(root, metadata)
 
     writer = CSVKitWriter(sys.stdout)

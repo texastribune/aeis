@@ -1241,7 +1241,7 @@ def get_or_create_metadata(root):
         for column in get_columns(aeis_file, metadata=metadata):
             pass
 
-    # XXX, the 2013 metadata is totally disjoint from any file name
+    # XXX, some 2013 metadata is totally disjoint from any file name
     get_extra_metadata(root, metadata)
 
     return metadata
