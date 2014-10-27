@@ -82,7 +82,7 @@ GROUP_CODES = {
 TWO_DIGIT_YEAR = re.compile('\d\d')
 
 
-def parse_two_digit_year(partial):
+def parse_two_digit_year(partial, remainder=None):
     years = int(partial)
     if years > 90:
         return 1900 + years
@@ -90,7 +90,7 @@ def parse_two_digit_year(partial):
         return 2000 + years
 
 
-def parse_three_digit_year(partial):
+def parse_three_digit_year(partial, remainder=None):
     years = int(partial)
     if years > 90:
         return 1900 + years
@@ -98,7 +98,7 @@ def parse_three_digit_year(partial):
         return 2000 + years
 
 
-def parse_one_digit_grade(grade):
+def parse_one_digit_grade(grade, remainder=None):
     if grade == '0':
         return '3-8-and-10'
     if grade == 'Z':
@@ -111,7 +111,7 @@ def parse_one_digit_grade(grade):
         return str(int(grade))
 
 
-def parse_two_digit_grade(grade):
+def parse_two_digit_grade(grade, remainder=None):
     if grade == 'KG':
         return 'kindergarten'
     elif grade == 'ME':
@@ -120,7 +120,7 @@ def parse_two_digit_grade(grade):
         return str(int(grade))
 
 
-def parse_three_digit_grade(grade):
+def parse_three_digit_grade(grade, remainder=None):
     if grade == '311':
         return '10-11'
     elif grade == '411':
@@ -341,7 +341,11 @@ def analyzer_dsl(get_dsl):
                     # by transforming it with a callable.
                     dict_or_callable = metadata[key]
                     if callable(dict_or_callable):
-                        yield partial, {key: dict_or_callable(partial)}
+                        # The partial may be parsed by a function, which
+                        # may in turn require the entire remainder as
+                        # context to determine the correct value.
+                        value = dict_or_callable(partial, remainder)
+                        yield partial, {key: value}
                     else:
                         try:
                             # If the metadata element is a string, just
@@ -1219,7 +1223,7 @@ def analyze_part1_2013(aeis_file):
             'unknown': {'00T': {'grade': '3-11'}},
             'year': parse_three_digit_year,
             'measure': {
-                'R': 'ratio',
+                'R': 'rate',
                 'N': 'numerator',
                 'D': 'denominator'
             }
@@ -1228,6 +1232,69 @@ def analyze_part1_2013(aeis_file):
 
 
 analyze_part2_2013 = analyze_part1_2013
+
+
+@analyzer
+@analyzer_dsl
+def analyze_perf_2013(aeis_file):
+    """
+    2013 college readiness and advanced course data.
+
+    TODO: Needs a second pass WRT numerators/denomenators/counts.
+
+    ??? What's the difference between the "0BT" and "0BTA" fields?
+    """
+    def parse_measure(partial, remainder=None):
+        """
+        Distinguish between "numerator" and "count" measures that both
+        occupy the partial key "N".
+        """
+        if partial == 'R':
+            return 'rate'
+        elif partial == 'D':
+            return 'denominator'
+        elif partial == 'N' and len(remainder) > 8:
+            return 'numerator'
+        else:
+            # This short field format uses "N" to mean count.
+            return 'count'
+
+    return {
+        (r'(?P<group>\w)'
+         r'(?P<grade>\d\d\d\d)?'
+         r'(?P<field>DR|0AD|0AT|0BKA?|0BTA?)'  # ???
+         r'(?P<year>\d\d)'
+         r'(?P<measure>R|N|D)'): ({
+            'group': GROUP_CODES,
+            'grade': {
+                '': {},
+                '0708': '7-8',
+                '0912': '9-12',
+            },
+            'field': {
+                'DR': 'annual-dropout',
+                '0AD': 'advanced-course-enrollment',
+                '0AT': 'attendance',
+                '0BK': {
+                    # In this case the denominator is the total number
+                    # of students taking any AP/IB test.
+                    'field': 'api-ib.above-criteria',
+                    'subject': 'any',  # ???
+                },
+                '0BKA': {
+                    # Students taking all AP/IB subjects.
+                    # In this case the denominator is the total number
+                    # of 11th and 12th grade students.
+                    'field': 'api-ib.above-criteria',
+                    'subject': 'all',
+                },
+                '0BT': 'api-ib.students-taking-test',
+                '0BTA': 'api-ib.students-taking-all-tests'
+            },
+            'year': parse_two_digit_year,
+            'measure': parse_measure
+        }),
+    }
 
 
 # TODO: Move to metadata.py

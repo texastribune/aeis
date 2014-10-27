@@ -87,7 +87,7 @@ def get_metadata_for_file(aeis_file, metadata):
                 metadata.setdefault(column, {})
                 meta = metadata.get(column)
                 meta.setdefault('descriptions', set())
-                meta.setdefault('files', set())
+                meta.setdefault('layouts', set())
                 meta['descriptions'].add(description)
                 meta['layouts'].add(path)
                 metadata[column] = meta
