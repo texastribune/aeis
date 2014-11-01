@@ -52,11 +52,9 @@ def get_extra_metadata(root, metadata):
     """
     Get metadata for unmatched 2013 files.
     """
-    for aeis_file in DummyAEISFile.generate('comp', root, 2013):
-        get_metadata_for_file(aeis_file, metadata=metadata)
-
-    for aeis_file in DummyAEISFile.generate('othr', root, 2013):
-        get_metadata_for_file(aeis_file, metadata=metadata)
+    for root_name in ('comp', 'othr', 'cad', 'tsi'):
+        for aeis_file in DummyAEISFile.generate(root_name, root, 2013):
+            get_metadata_for_file(aeis_file, metadata=metadata)
 
 
 def get_metadata_for_file(aeis_file, metadata):
