@@ -1078,6 +1078,7 @@ def analyze_taas(aeis_file):
         )}
     )}
 
+
 @analyzer
 @analyzer_dsl
 def analyze_cad(aeis_file):
@@ -1242,7 +1243,11 @@ def analyze_perf_2013(aeis_file):
 
     TODO: Needs a second pass WRT numerators/denomenators/counts.
 
+    TODO: Reconcile new fields with previous years.
+
     ??? What's the difference between the "0BT" and "0BTA" fields?
+
+    ??? What's the difference between the "0C4" and "0C4X" fields?
     """
     def parse_measure(partial, remainder=None):
         """
@@ -1250,6 +1255,12 @@ def analyze_perf_2013(aeis_file):
         occupy the partial key "N".
         """
         if partial == 'R':
+            # Average ACT score
+            if '0CA' in remainder:
+                return 'average'
+            elif '0CSA' in remainder:
+                return 'average'
+
             return 'rate'
         elif partial == 'D':
             return 'denominator'
@@ -1262,7 +1273,7 @@ def analyze_perf_2013(aeis_file):
     return {
         (r'(?P<group>\w)'
          r'(?P<grade>\d\d\d\d)?'
-         r'(?P<field>DR|0AD|0AT|0BKA?|0BTA?)'  # ???
+         r'(?P<field>\w{2,4})'
          r'(?P<year>\d\d)'
          r'(?P<measure>R|N|D)'): ({
             'group': GROUP_CODES,
@@ -1272,9 +1283,10 @@ def analyze_perf_2013(aeis_file):
                 '0912': '9-12',
             },
             'field': {
-                'DR': 'annual-dropout',
-                '0AD': 'advanced-course-enrollment',
+                # Attendance
                 '0AT': 'attendance',
+                # Advanced courses
+                '0AD': 'advanced-course-enrollment',
                 '0BK': {
                     # In this case the denominator is the total number
                     # of students taking any AP/IB test.
@@ -1289,7 +1301,72 @@ def analyze_perf_2013(aeis_file):
                     'subject': 'all',
                 },
                 '0BT': 'api-ib.students-taking-test',
-                '0BTA': 'api-ib.students-taking-all-tests'
+                '0BTA': 'api-ib.students-taking-all-tests',
+                # Completion
+                'DR': 'annual-dropout',
+                '0C4': 'completion.four-year',
+                '0C4X': 'completion.four-year',
+                '0C5': 'completion.five-year',
+                '0C5X': 'completion.five-year',
+                '0GR': 'completion.all-graduates',
+                # SAT/ACT
+                '0CT': 'college-admissions.taking-act-or-sat',
+                '0CSA': 'sat',
+                '0CA': 'act',
+                '0CAA': 'act',  # ??? What's the difference?
+                '0CC': 'act.above-criteria',
+                # RHSP/DAP
+                # Recommended High School Program
+                # or Distinguished Achievement Program
+                '0GH': 'rhsp-dap',
+                # Completion drill-down. Nasty.
+                # TODO: One of these should be comparable to completion
+                # fields from previous years, probably four-year.
+                '2C4X': \
+                    'completion.four-year.graduates-ged-recipients-continuers',
+                '2C5X': \
+                    'completion.five-year.graduates-ged-recipients-continuers',
+                '3C4X': 'completion.four-year.graduates-ged-recipients',
+                '3C5X': 'completion.five-year.graduates-ged-recipients',
+                'EC4X': 'completion.four-year.ged-recipients',
+                'EC5X': 'completion.five-year.ged-recipients',
+                'GC4': 'completion.four-year.graduates',
+                'GC4X': 'completion.four-year.graduates',
+                'GC5': 'completion.five-year.graduates',
+                'GC5X': 'completion.five-year.graduates',
+                'NC4X': 'completion.four-year.continuers',
+                'NC5X': 'completion.five-year.continuers',
+                '0C6': 'completion.six-year',
+                '2C6': \
+                    'completion.six-year.graduates-ged-recipients-continuers',
+                '3C6': 'completion.six-year.graduates-ged-recipients',
+                'EC5': 'completion.five-year.ged-recipients',
+                'EC6': 'completion.six-year.ged-recipients',
+                'GC6': 'completion.six-year.graduates',
+                'NC5': 'completion.five-year.continuers',
+                'NC6': 'completion.six-year.continuers',
+                # Dropouts
+                'DC4X': 'completion.four-year.longitudinal-dropout',
+                'DC5X': 'completion.five-year.longitudinal-dropout',
+                'DC5': 'completion.five-year.longitudinal-dropout',
+                'DC6': 'completion.six-year.longitudinal-dropout',
+                # College Readiness
+                'CRR': {'field': 'college-admissions.college-ready',
+                        'subject': 'reading'},
+                'CRM': {'field': 'college-admissions.college-ready',
+                        'subject': 'math'},
+                'CRB': {'field': 'college-admissions.college-ready',
+                        'subject': 'both'},
+                # Texas Success Initiative
+                # 2200 or higher scaled TAKS score for Math/ELA with a
+                # score of 3 or higher on the writing component.
+                'TSIM': {'field': 'texas-success-initiative',
+                         'subject': 'mathematics'},
+                'TSIR': {'field': 'texas-success-initiative',
+                         'subject': 'reading-ela'},
+                # Institue of Higher Education IHE Enrollment
+                'HEE': 'ihe-enrollment',
+                'HEC': 'ihe-enrollment.public',
             },
             'year': parse_two_digit_year,
             'measure': parse_measure
