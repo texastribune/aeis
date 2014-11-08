@@ -78,8 +78,71 @@ GROUP_CODES = {
     'P': {'group': 'second-year-monitored-ell'},
 }
 
-
 TWO_DIGIT_YEAR = re.compile('\d\d')
+
+DEFAULT_MEASURES = {'R': 'rate', 'N': 'numerator', 'D': 'denominator'}
+
+STAFF_ROLES = {
+    'A': 'all',
+    'C': 'central-administrators',
+    'E': 'educational-aides',
+    'P': 'professionals',
+    'S': 'school-administrators',
+    'U': 'support',
+    'X': 'auxiliary',
+    'O': 'contract-service',
+    'T': 'teachers',
+}
+
+TEACHER_DIMENSIONS = {
+    # Total
+    'TO': {},
+    # Experience
+    '00': 'zero-years',
+    '01': 'one-to-five-years',
+    '06': 'six-to-ten-years',
+    '11': 'eleven-to-twenty-years',
+    '20': 'twenty-or-more-years',
+    # Program
+    'BI': {'program': 'bilingual'},
+    'CO': {'program': 'compensatory'},
+    'GI': {'program': 'gifted-and-talented'},
+    'OP': {'program': 'other'},
+    'RE': {'program': 'regular'},
+    'SP': {'program': 'special-education'},
+    # Vocational AKA Career & Tech
+    'VO': {'program': 'vocational'},
+    # Race
+    'BL': {'race': 'black'},
+    'WH': {'race': 'white'},
+    'HI': {'race': 'hispanic'},
+    # TODO: change to "native-american"?
+    'IN': {'race': 'indian-alaskan'},
+    'NA': {'race': 'native-american'},
+    'AS': {'race': 'asian'},
+    'PA': {'race': 'asian-pacific-islander'},
+    'PI': {'race': 'pacific-islander'},
+    'OE': {'race': 'other'},
+    'TW': {'race': 'two-or-more-races'},
+    # Gender
+    'FE': {'gender': 'female'},
+    'MA': {'gender': 'male'},
+    # Degree
+    'NO': {'degree': 'none'},
+    'BA': {'degree': 'bachelors'},
+    'MS': {'degree': 'masters'},
+    'PH': {'degree': 'phd'},
+    # Permit
+    'CA': {'permit': 'temporary-assignment'},
+    'ET': {'permit': 'emergency-teaching'},
+    'NR': {'permit': 'non-renewable'},
+    'SA': {'permit': 'special-assignment'},
+    # Dimensions
+    'EXP': {'dimension': 'experience'},
+    'KID': {'dimension': 'student-teacher-ratio'},
+    'TEN': {'dimension': 'tenure'},
+    'URN': {'dimension': 'turnover'},
+}
 
 
 def parse_two_digit_year(partial, remainder=None):
@@ -112,10 +175,14 @@ def parse_one_digit_grade(grade, remainder=None):
 
 
 def parse_two_digit_grade(grade, remainder=None):
-    if grade == 'KG':
+    if grade in ('KG', 'KN'):
         return 'kindergarten'
     elif grade == 'ME':
         return 'mixed-elementary'
+    elif grade == 'EE':
+        return 'early-education'
+    elif grade == 'PK':
+        return 'pre-kindergarten'
     else:
         return str(int(grade))
 
@@ -130,6 +197,32 @@ def parse_three_digit_grade(grade, remainder=None):
         raise ValueError(grade)
 
     return str(int(grade))
+
+
+def parse_2013_measure(partial, remainder=None):
+    """
+    Distinguish between "numerator" and "count" measures that both
+    occupy the partial key "N" in 2013 fields.
+
+    In this case, the remainder is expected to be the full column name
+    except for the first character signifying the report level.
+    """
+    if partial == 'R':
+        # Average ACT score
+        if '0CA' in remainder:
+            return 'average'
+        elif '0CSA' in remainder:
+            return 'average'
+
+        return 'rate'
+    elif partial == 'D':
+        return 'denominator'
+    elif partial == 'N' and len(remainder) > 8:
+        return 'numerator'
+    elif partial == 'N':
+        # This short field format uses "N" to mean count.
+        return 'count'
+
 
 
 # TODO: Move to analysis.py
@@ -233,6 +326,13 @@ def analyzer(analyze_function):
             for partial, data in analyze_function(aeis_file, remainder):
                 yield partial, data
                 remainder = remainder.replace(partial, '', 1)
+
+            # Parse remaining 2013 numerator/denominator measures first
+            if aeis_file.year == 2013 and len(remainder) == 1:
+                measure = parse_2013_measure(remainder, column[1:])
+                if measure:
+                    yield remainder, {'measure': measure}
+                    remainder = ''
 
             # Expect a final possible 1-digit measure code
             if remainder == 'T':
@@ -835,7 +935,7 @@ def analyze_staf(aeis_file):
 
     return {
         '(?P<field>PCT|PET)': (
-            {'field': lambda field: 'class-size'},
+            {'field': lambda field, remainder: 'class-size'},
             {
                 'ENG': {'subject': 'english'},
                 'FLA': {'subject': 'foreign-language'},
@@ -861,75 +961,19 @@ def analyze_staf(aeis_file):
             {
                 'T': (
                     {'role': 'teachers'},
-                    {'EXP': {'field': 'experience'}},
-                    {'KID': {'field': 'student-teacher-ratio'}},
-                    {'TEN': {'field': 'tenure'}},
-                    {'URN': {'field': 'turnover'}},
+                    {'EXP': {'dimension': 'experience'}},
+                    {'KID': {'dimension': 'student-teacher-ratio'}},
+                    {'TEN': {'dimension': 'tenure'}},
+                    {'URN': {'dimension': 'turnover'}},
                     {
                         '(?P<code>\w\w)': (
-                            {
-                                'code': {
-                                    # Total
-                                    'TO': {},
-                                    # Experience
-                                    '00': 'zero-years',
-                                    '01': 'one-to-five-years',
-                                    '06': 'six-to-ten-years',
-                                    '11': 'eleven-to-twenty-years',
-                                    '20': 'twenty-or-more-years',
-                                    # Program
-                                    'BI': {'program': 'bilingual'},
-                                    'CO': {'program': 'compensatory'},
-                                    'GI': {'program': 'gifted-and-talented'},
-                                    'OP': {'program': 'other'},
-                                    'RE': {'program': 'regular'},
-                                    'SP': {'program': 'special-education'},
-                                    # Vocational AKA Career & Tech
-                                    'VO': {'program': 'vocational'},
-                                    # Race
-                                    'BL': {'race': 'black'},
-                                    'WH': {'race': 'white'},
-                                    'HI': {'race': 'hispanic'},
-                                    # TODO: change to "native-american"?
-                                    'IN': {'race': 'indian-alaskan'},
-                                    'NA': {'race': 'native-american'},
-                                    'AS': {'race': 'asian'},
-                                    'PA': {'race': 'asian-pacific-islander'},
-                                    'PI': {'race': 'pacific-islander'},
-                                    'OE': {'race': 'other'},
-                                    'TW': {'race': 'two-or-more-races'},
-                                    # Gender
-                                    'FE': {'gender': 'female'},
-                                    'MA': {'gender': 'male'},
-                                    # Degree
-                                    'NO': {'degree': 'none'},
-                                    'BA': {'degree': 'bachelors'},
-                                    'MS': {'degree': 'masters'},
-                                    'PH': {'degree': 'phd'},
-                                    # Permit
-                                    'CA': {'permit': 'temporary-assignment'},
-                                    'ET': {'permit': 'emergency-teaching'},
-                                    'NR': {'permit': 'non-renewable'},
-                                    'SA': {'permit': 'special-assignment'},
-                                },
-                            },
+                            {'code': TEACHER_DIMENSIONS},
                             field_transitions,
                         )
                     }
                 ),
                 '(?P<role>[A-Z])': (
-                    {
-                        'role': {
-                            'A': 'all',
-                            'C': 'central-administrators',
-                            'E': 'educational-aides',
-                            'P': 'professionals',
-                            'S': 'school-administrators',
-                            'U': 'support',
-                            'X': 'auxiliary',
-                            'O': 'contract-service',
-                        }
-                    },
+                    {'role': STAFF_ROLES},
                     {
                         '(?P<code>\w{2})': (
                             {
@@ -1249,27 +1293,6 @@ def analyze_perf_2013(aeis_file):
 
     ??? What's the difference between the "0C4" and "0C4X" fields?
     """
-    def parse_measure(partial, remainder=None):
-        """
-        Distinguish between "numerator" and "count" measures that both
-        occupy the partial key "N".
-        """
-        if partial == 'R':
-            # Average ACT score
-            if '0CA' in remainder:
-                return 'average'
-            elif '0CSA' in remainder:
-                return 'average'
-
-            return 'rate'
-        elif partial == 'D':
-            return 'denominator'
-        elif partial == 'N' and len(remainder) > 8:
-            return 'numerator'
-        else:
-            # This short field format uses "N" to mean count.
-            return 'count'
-
     return {
         (r'(?P<group>\w)'
          r'(?P<grade>\d\d\d\d)?'
@@ -1318,7 +1341,8 @@ def analyze_perf_2013(aeis_file):
                 # RHSP/DAP
                 # Recommended High School Program
                 # or Distinguished Achievement Program
-                '0GH': 'rhsp-dap',
+                 #'0GH': 'rhsp-dap',  ???
+                '0GH': {'field': 'graduates', 'program': 'recommended'},
                 # Completion drill-down. Nasty.
                 # TODO: One of these should be comparable to completion
                 # fields from previous years, probably four-year.
@@ -1369,8 +1393,158 @@ def analyze_perf_2013(aeis_file):
                 'HEC': 'ihe-enrollment.public',
             },
             'year': parse_two_digit_year,
-            'measure': parse_measure
+            'measure': parse_2013_measure
         }),
+    }
+
+
+@analyzer
+@analyzer_dsl
+def analyze_prof_2013(aeis_file):
+    """
+    2013 profile data.
+
+    This appears to include some duplicate fields from student, staff,
+    and other datasets.
+    """
+    graduate_distinctions = {
+        'ADV': {'graduate-distinction': 'advanced-seals-on-diploma'},
+    }
+
+    groups = {
+        'ALL': {'group': 'all'},
+        'ECO': {'group': 'economically-disadvantaged'},
+        'GIF': {'group': 'gifted-and-talented'},
+        'LEP': {'group': 'limited-english-proficient'},
+        'NED': {'group': 'non-educationally-disadvantaged'},
+        'RSK': {'group': 'at-risk'},
+    }
+
+    programs = {
+        'SPE': {'program': 'special'},
+        'BIL': {'program': 'bilingual'},
+        # Disciplinary Alternative Education Program
+        'DIS': {'program': 'daep'},
+        'VOC': {'program': 'vocational'},
+    }
+
+    races = {
+        'ASI': {'race': 'asian'},
+        'BLA': {'race': 'black'},
+        'HIS': {'race': 'hispanic'},
+        'IND': {'race': 'native-american'},
+        'OTH': {'race': 'other'},
+        'PCI': {'race': 'pacific-islander'},
+        'TWO': {'race': 'two-or-more-races'},
+        'WHI': {'race': 'white'},
+    }
+
+    return {
+        # Duplicate completion fields
+        (r'(?P<group>\w)'
+         r'(?P<field>\w{2,4})?'
+         r'(?P<year>\d\d)'
+         r'(?P<measure>N|D|R)'): ({
+            'group': GROUP_CODES,
+            'field': {
+                # Completion
+                '0GR': 'completion.all-graduates',
+                '0GH': {'field': 'graduates',  # RHSP/DAP
+                        'program': 'recommended'},
+                '0GM': {'field': 'graduates', 'program': 'minimum'},
+            },
+            'year': parse_two_digit_year,
+            'measure': parse_2013_measure,
+        }),
+        # Teacher data
+        (r'(?P<field>PST)'
+         r'(?P<dimension>EXP|KID|TEN|\w\w)'
+         r'(?P<wildcard>F|S)?'): ({
+            'field': {'PST': {'field': 'staff', 'role': 'teachers'}},
+            'dimension': TEACHER_DIMENSIONS,
+            'wildcard': {
+                'F': {'status': 'full-time'},
+                'S': {'field': 'salary'},
+            }
+        }),
+        # Staff data
+        (r'(?P<field>PS)'
+         r'(?P<role>\w)'
+         r'(?P<code>TO|MI|CO)'
+         r'(?P<wildcard>F|S)'): ({
+            'field': {'PS': 'staff'},
+            'role': STAFF_ROLES,
+            'code': {
+                'MI': {'group': 'minority'},
+                'TO': {'field': 'staff.total'},
+                'CO': {'program': 'compensatory'},
+            },
+            'wildcard': {
+                'F': {'status': 'full-time'},
+                'S': {'field': 'salary'},
+            }
+        }),
+        # Combined staff and student data
+        r'(?P<field>PEG|PER|PCT|PET|PEMALL)': (
+            # Metadata
+            {
+                'field': {
+                    'PEG': {'field': 'graduates', 'program': 'regular'},
+                    'PER': {'field': 'retention'},
+                    # TODO: Parse final "C" measure as number-of-classes field
+                    # instead of "class-size" field
+                    'PCT': {'field': 'class-size'},
+                    'PET': {'field': 'enrollment'},
+                    'PEMALL': {'field': 'enrollment', 'group': 'mobile'},
+                },
+            },
+            # Retention (??? to 2012)
+            {
+                r'(?P<program>RA|SA)(?P<grade>[1-8,K])': (
+                    {
+                        'program': {
+                            'RA': {'program': 'regular'},
+                            'SA': {'program': 'special'},
+                        },
+                        'grade': parse_one_digit_grade
+                    }
+                )
+            },
+            # Grade
+            {
+                r'(?P<grade_signifier>G)(?=ME|KG|KN|EE|PK|\d\d)': (
+                    {'grade_signifier': {'G': {}}},
+                    {
+                        r'(?P<grade>\w\w)': (
+                            {'grade': parse_two_digit_grade},
+                            {'S': {'measure': 'count'}},
+                        )
+                    }
+                )
+            },
+            # Subject
+            {
+                r'(?P<subject>ENG|FLA|MAT|SCI|SST|SOC|ELE)': (
+                    {
+                        'subject': {
+                            'ENG': 'english',
+                            'FLA': 'foreign-language',
+                            'MAT': 'math',
+                            'SCI': 'science',
+                            'SST': 'social-studies',
+                            'SOC': 'social-studies',
+                            'ELE': {'grade': 'elementary'},
+                        }
+                    },
+                    {'S': {'measure': 'count'}},
+                )
+            },
+            # Other remainders
+            graduate_distinctions,
+            groups,
+            programs,
+            races
+        )
     }
 
 

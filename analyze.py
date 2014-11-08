@@ -56,6 +56,7 @@ def get_analyzer_in_loop(aeis_file):
             try:
                 logger.info('reloading analyzers...')
                 globals()['analyzers'] = reload(analyzers)
+                continue
             except SyntaxError as e:
                 traceback.print_exc()
                 continue
@@ -108,6 +109,9 @@ def analyze_column(column, analyzer, metadata):
 
 
 def analyze_column_in_loop(column, analyzer, metadata):
+    """
+    Reload the current analyzer until it produces a usable analysis.
+    """
     while True:
         try:
             # Print the current column
@@ -116,7 +120,8 @@ def analyze_column_in_loop(column, analyzer, metadata):
                 aeis_file.base_name,
                 column
             ))
-            return analyze_column(column, analyzer, metadata=metadata)
+            analysis = analyze_column(column, analyzer, metadata=metadata)
+            return analysis, analyzer
         except Exception as e:
             traceback.print_exc()
             sleep_or_raise()
@@ -125,6 +130,7 @@ def analyze_column_in_loop(column, analyzer, metadata):
                 logger.info('reloading analyzers...')
                 globals()['analyzers'] = reload(analyzers)
                 analyzer = get_analyzer(aeis_file)
+                continue
             except SyntaxError as e:
                 traceback.print_exc()
                 continue
@@ -138,7 +144,7 @@ def analyze_columns(aeis_file, metadata=None):
     n_analyzed = 0
     for column in sorted(columns):
         # Keep analyzing until we get it right...
-        analysis = analyze_column_in_loop(column, analyzer, metadata)
+        analysis, analyzer = analyze_column_in_loop(column, analyzer, metadata)
 
         # Report analysis
         logger.debug(pprint.pformat(analysis))
