@@ -1548,6 +1548,21 @@ def analyze_prof_2013(aeis_file):
     }
 
 
+@analyzer
+# @analyzer_dsl
+def analyze_staar(aeis_file, remainder):
+    # TODO
+    yield remainder, {}
+
+
+analyze_staar1 = analyze_staar
+analyze_staar2 = analyze_staar
+analyze_staar3 = analyze_staar
+analyze_staar4 = analyze_staar
+analyze_staar5 = analyze_staar
+analyze_staar6 = analyze_staar
+
+
 # TODO: Move to metadata.py
 def get_or_create_metadata(root):
     if os.path.exists('metadata.shelf'):
