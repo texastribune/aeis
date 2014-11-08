@@ -1196,8 +1196,10 @@ def analyze_taks(aeis_file):
     }
 
     return {
-        (r'(?P<group>\w)(?P<grade>\d\d\d)'
-         r'(?P<field>\w)(?P<test>\w)'
+        (r'(?P<group>\w)'
+         r'(?P<grade>\d\d\d)'
+         r'(?P<field>\w)'
+         r'(?P<test>\w)'
          r'(?P<year>\d\d)'): ({
             'group': GROUP_CODES,
             'grade': parse_three_digit_grade,
@@ -1240,6 +1242,20 @@ analyze_taks4 = analyze_taks
 # Progress of Prior Year TAKS Failers, Percent Passing TAKS, Eng Lang Arts
 # District, region, and state only
 analyze_taks5 = analyze_taks
+
+
+@analyzer
+# @analyzer_dsl
+def analyze_taks_2013(aeis_file, remainder):
+    # TODO
+    yield remainder, {}
+
+
+analyze_taks1_2013 = analyze_taks_2013
+analyze_taks2_2013 = analyze_taks_2013
+analyze_taks3_2013 = analyze_taks_2013
+analyze_taks4_2013 = analyze_taks_2013
+analyze_taks5_2013 = analyze_taks_2013
 
 
 @analyzer
@@ -1571,6 +1587,7 @@ def get_or_create_metadata(root):
     metadata = shelve.open('metadata.shelf')
     aeis_files = list(get_files(root))
     for aeis_file in aeis_files:
+        if aeis_file.year < 2013: continue
         for column in get_columns(aeis_file, metadata=metadata):
             pass
 
