@@ -82,6 +82,10 @@ TWO_DIGIT_YEAR = re.compile('\d\d')
 
 DEFAULT_MEASURES = {'R': 'rate', 'N': 'numerator', 'D': 'denominator'}
 
+
+# Staff
+#######
+
 STAFF_ROLES = {
     'A': 'all',
     'C': 'central-administrators',
@@ -94,15 +98,15 @@ STAFF_ROLES = {
     'T': 'teachers',
 }
 
-TEACHER_DIMENSIONS = {
+STAFF_CODES = {
     # Total
-    'TO': {},
+    'TO': {'field': 'staff.total'},
     # Experience
-    '00': 'zero-years',
-    '01': 'one-to-five-years',
-    '06': 'six-to-ten-years',
-    '11': 'eleven-to-twenty-years',
-    '20': 'twenty-or-more-years',
+    '00': {'experience': 'zero-years'},
+    '01': {'experience': 'one-to-five-years'},
+    '06': {'experience': 'six-to-ten-years'},
+    '11': {'experience': 'eleven-to-twenty-years'},
+    '20': {'experience': 'twenty-or-more-years'},
     # Program
     'BI': {'program': 'bilingual'},
     'CO': {'program': 'compensatory'},
@@ -116,6 +120,8 @@ TEACHER_DIMENSIONS = {
     'BL': {'race': 'black'},
     'WH': {'race': 'white'},
     'HI': {'race': 'hispanic'},
+    # Group
+    'MI': {'group': 'minority'},
     # TODO: change to "native-american"?
     'IN': {'race': 'indian-alaskan'},
     'NA': {'race': 'native-american'},
@@ -137,12 +143,49 @@ TEACHER_DIMENSIONS = {
     'ET': {'permit': 'emergency-teaching'},
     'NR': {'permit': 'non-renewable'},
     'SA': {'permit': 'special-assignment'},
-    # Dimensions
+}
+
+STAFF_TRANSITIONS = {
+    'F': {'status': 'full-time'},
+    'P': {'status': 'permit'},
+    'S': {'field': 'staff.salary'},
+}
+
+STAFF_DIMENSIONS = {
     'EXP': {'dimension': 'experience'},
     'KID': {'dimension': 'student-teacher-ratio'},
     'TEN': {'dimension': 'tenure'},
     'URN': {'dimension': 'turnover'},
 }
+
+STAFF_DATA = (
+    {'field': 'staff'},
+    {
+        # District-only measure
+        'AINH': {'field': 'staff.instructional'}
+    },
+    {
+        'T': (
+            {'role': 'teachers'},
+            STAFF_DIMENSIONS,
+            {
+                '(?P<code>\w\w)': (
+                    {'code': STAFF_CODES},
+                    STAFF_TRANSITIONS,
+                )
+            }
+        ),
+        '(?P<role>[A-Z])': (
+            {'role': STAFF_ROLES},
+            {
+                '(?P<code>\w\w)': (
+                    {'code': STAFF_CODES},
+                    STAFF_TRANSITIONS,
+                )
+            }
+        )
+    },
+)
 
 
 def parse_two_digit_year(partial, remainder=None):
@@ -213,7 +256,6 @@ def parse_2013_measure(partial, remainder=None):
             return 'average'
         elif '0CSA' in remainder:
             return 'average'
-
         return 'rate'
     elif partial == 'D':
         return 'denominator'
@@ -222,7 +264,6 @@ def parse_2013_measure(partial, remainder=None):
     elif partial == 'N':
         # This short field format uses "N" to mean count.
         return 'count'
-
 
 
 # TODO: Move to analysis.py
@@ -916,7 +957,27 @@ def analyze_othr(aeis_file, remainder):
 
 @analyzer
 def analyze_ref(aeis_file, remainder):
-    # Nothing here... it's all parsed by the base analyzer.
+    if remainder.startswith('AD_'):
+        # Academic Achievement Distinction
+        # http://ritter.tea.state.tx.us/perfreport/account/2013/20130328coe/aadd_decisions.pdf
+        # Boolean values ("0" or "1")
+        yield 'AD_', {'field': 'academic-achievement-distinction'}
+        remainder = remainder[3:]
+
+        if remainder == 'MATH':
+            yield remainder, {'distinction': 'mathematics'}
+        elif remainder == 'READ':
+            yield remainder, {'distinction': 'reading-ela'}
+        elif remainder == 'PROGRESS':
+            yield remainder, {'distinction': 'top-25-percent'}
+
+    elif remainder == 'FLALTED':
+        # Rated Under Alternative Education Accountability Procedures
+        # http://ritter.tea.state.tx.us/aea/
+        # Boolean values ("Y" or "N")
+        yield remainder, {'field': 'rated-under-aea-procedures'}
+
+    # Nothing left...
     yield '', {}
 
 
@@ -927,12 +988,6 @@ def analyze_staf(aeis_file):
     Info on permits: http://info.sos.state.tx.us/pls/pub/readtac$ext.TacPage?sl=R&app=9&p_dir=&p_rloc=&p_tloc=&p_ploc=&pg=1&p_tac=&ti=19&pt=7&ch=230&rl=77
     Example permit form: file://localhost/Users/noah/Downloads/TCAPreaderadded.pdf
     """
-    field_transitions = {
-        'F': {'status': 'full-time'},
-        'P': {'status': 'permit'},
-        'S': {'field': 'salary'},
-    }
-
     return {
         '(?P<field>PCT|PET)': (
             {'field': lambda field, remainder: 'class-size'},
@@ -952,43 +1007,7 @@ def analyze_staf(aeis_file):
                 )
             }
         ),
-        'PS': (
-            {'field': 'staff'},
-            {
-                # District-only measure
-                'AINHP': {'field': 'instructional-staff-percent'}
-            },
-            {
-                'T': (
-                    {'role': 'teachers'},
-                    {'EXP': {'dimension': 'experience'}},
-                    {'KID': {'dimension': 'student-teacher-ratio'}},
-                    {'TEN': {'dimension': 'tenure'}},
-                    {'URN': {'dimension': 'turnover'}},
-                    {
-                        '(?P<code>\w\w)': (
-                            {'code': TEACHER_DIMENSIONS},
-                            field_transitions,
-                        )
-                    }
-                ),
-                '(?P<role>[A-Z])': (
-                    {'role': STAFF_ROLES},
-                    {
-                        '(?P<code>\w{2})': (
-                            {
-                                'code': {
-                                    'MI': {'group': 'minority'},
-                                    'TO': {'field': 'staff.total'},
-                                    'CO': {'program': 'compensatory'},
-                                }
-                            },
-                            field_transitions,
-                        )
-                    }
-                )
-            }
-        )
+        'PS': STAFF_DATA
     }
 
 
@@ -1064,7 +1083,13 @@ def analyze_stud(aeis_file):
                 r'(?P<year>\d\d)': (
                     {'year': parse_two_digit_year},
                     # TODO: Move to common analyzer?
-                    {'N': {'measure': 'count'}}
+                    {
+                        'N': {'measure': 'count'},
+                        'D': {
+                            'measure': 'denominator',
+                            'description': 'total-student-records',
+                        },
+                    }
                 )
             }
         ),
@@ -1458,11 +1483,14 @@ def analyze_prof_2013(aeis_file):
     return {
         # Duplicate completion fields
         (r'(?P<group>\w)'
-         r'(?P<field>\w{2,4})?'
+         r'(?P<field>PID|UND|0G\w)?'
          r'(?P<year>\d\d)'
-         r'(?P<measure>N|D|R)'): ({
+         r'(?P<measure>N|D|R|C)'): ({
             'group': GROUP_CODES,
             'field': {
+                # Errors
+                'PID': {'field': 'pid-error'},
+                'UND': {'field': 'underreported-students'},
                 # Completion
                 '0GR': 'completion.all-graduates',
                 '0GH': {'field': 'graduates',  # RHSP/DAP
@@ -1477,7 +1505,7 @@ def analyze_prof_2013(aeis_file):
          r'(?P<dimension>EXP|KID|TEN|\w\w)'
          r'(?P<wildcard>F|S)?'): ({
             'field': {'PST': {'field': 'staff', 'role': 'teachers'}},
-            'dimension': TEACHER_DIMENSIONS,
+            'dimension': STAFF_CODES,
             'wildcard': {
                 'F': {'status': 'full-time'},
                 'S': {'field': 'salary'},
@@ -1500,13 +1528,16 @@ def analyze_prof_2013(aeis_file):
                 'S': {'field': 'salary'},
             }
         }),
+        # Staff
+        'PS': STAFF_DATA,
         # Combined staff and student data
-        r'(?P<field>PEG|PER|PCT|PET|PEMALL)': (
+        r'(?P<field>PEG|PER|PCT|PET|PFE|PEMALL)': (
             # Metadata
             {
                 'field': {
                     'PEG': {'field': 'graduates', 'program': 'regular'},
                     'PER': {'field': 'retention'},
+                    'PFE': {'field': 'expenditure'},
                     # TODO: Parse final "C" measure as number-of-classes field
                     # instead of "class-size" field
                     'PCT': {'field': 'class-size'},
@@ -1555,12 +1586,17 @@ def analyze_prof_2013(aeis_file):
                     {'S': {'measure': 'count'}},
                 )
             },
+            # Expenditure
+            {
+                # "Instructional Expenditure Ratio"
+                'IER': {'function': 'instruction'},
+            },
             # Other remainders
             graduate_distinctions,
             groups,
             programs,
             races
-        )
+        ),
     }
 
 

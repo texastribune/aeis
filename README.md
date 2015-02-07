@@ -17,7 +17,7 @@ To scrape and download all data from AEIS:
 
 To analyze the columns of the downloaded data:
 
-    $ python -m aeis.analyzers data
+    $ python analyze.py data --reload
 
 
 ### Next Steps
