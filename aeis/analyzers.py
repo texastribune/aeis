@@ -1054,7 +1054,7 @@ def analyze_stud(aeis_file):
                     'R': {'program': 'regular'},
                     'S': {'program': 'special'},
                 },
-                'grade': int,
+                'grade': parse_two_digit_grade,
                 'code': {
                     'EE': {'grade': 'early-education'},
                     'PK': {'grade': 'pre-kindergarten'},
