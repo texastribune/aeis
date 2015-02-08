@@ -122,8 +122,7 @@ STAFF_CODES = {
     'HI': {'race': 'hispanic'},
     # Group
     'MI': {'group': 'minority'},
-    # TODO: change to "native-american"?
-    'IN': {'race': 'indian-alaskan'},
+    'IN': {'race': 'native-american'},  # 2013 Indian/Alaskan
     'NA': {'race': 'native-american'},
     'AS': {'race': 'asian'},
     'PA': {'race': 'asian-pacific-islander'},
