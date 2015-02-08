@@ -290,7 +290,7 @@ def analyzer(analyze_function):
         # Some columns are words that signify a special field
         if column.lower() in ('campus', 'district', 'region', 'region_n'):
             yield column, {'field': 'key'}
-        elif column.lower() in ('campname', 'distname'):
+        elif column.lower() in ('campname', 'distname', 'regnname'):
             yield column, {'field': 'name'}
         elif column.lower() == 'class':
             yield column, {'field': 'school-type'}
@@ -1432,6 +1432,18 @@ def analyze_perf_2013(aeis_file):
                 # Institue of Higher Education IHE Enrollment
                 'HEE': 'ihe-enrollment',
                 'HEC': 'ihe-enrollment.public',
+                # 2013 Region-specific fields
+                '2C4': \
+                    'completion.four-year.graduates-ged-recipients-continuers',
+                '2C5': \
+                    'completion.five-year.graduates-ged-recipients-continuers',
+                '3C4': 'completion.four-year.graduates-ged-recipients',
+                '3C5': 'completion.five-year.graduates-ged-recipients',
+                'DC4': 'completion.four-year.longitudinal-dropout',
+                'DC5': 'completion.five-year.longitudinal-dropout',
+                'EC4': 'completion.four-year.ged-recipients',
+                'EC5': 'completion.five-year.ged-recipients',
+                'NC4': 'completion.four-year.continuers',
             },
             'year': parse_two_digit_year,
             'measure': parse_2013_measure
