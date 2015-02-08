@@ -34,6 +34,7 @@ class AEISFile(object):
         # Derive `root_name` from the common portion of the base name
         root_name = self.file_name.lower()
         for old_prefix, new_prefix in (
+            ('state', 's'),
             ('stat', 's'),
             ('dist', 'd'),
             ('regn', 'r'),
