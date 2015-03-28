@@ -35,8 +35,7 @@ def get_documents(root, files):
                     file=aeis_file.file_name,
                     version=aeis_file.year
                 )
-                # if 'level' not in data or data['level'] == 'campus':
-                #     logger.info(pprint.pformat(data))
+                logger.debug(pprint.pformat(data))
 
                 # Build a globally unique ID
                 _id = '%s:%s:%d' % (key, column, aeis_file.year)
