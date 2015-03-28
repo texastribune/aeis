@@ -63,8 +63,10 @@ def get_analyzer_in_loop(aeis_file):
 
 
 def analyze_column(column, analyzer, metadata):
-    analysis = {}
-    pretty_metadata = pprint.pformat(metadata.get(column))
+    column_metadata = metadata.get(column, {})
+    column_metadata['decomposition'] = []
+    pretty_metadata = pprint.pformat(column_metadata)
+    analysis = {'metadata': column_metadata}
 
     position = 0
     remainder = column
@@ -79,6 +81,9 @@ def analyze_column(column, analyzer, metadata):
                 pprint.pformat(data)
             )
             raise ValueError(message)
+
+        # Record decomposition
+        column_metadata['decomposition'].append((partial, data))
 
         # Determine continuation from the partial value
         if partial == remainder:
@@ -150,6 +155,10 @@ def analyze_columns(aeis_file, metadata=None):
         logger.debug(pprint.pformat(analysis))
 
         if '--json' in sys.argv:  # XXX
+            layouts = analysis['metadata'].get('layouts', [])
+            descriptions = analysis['metadata'].get('descriptions', [])
+            analysis['metadata']['layouts'] = list(layouts)
+            analysis['metadata']['descriptions'] = list(descriptions)
             print json.dumps(analysis)
 
         # Report progress
@@ -163,13 +172,23 @@ def analyze_columns(aeis_file, metadata=None):
 if __name__ == '__main__':
     root = sys.argv[1]
 
-    # Get files to process
-    files = sorted(get_files(root), key=lambda f: f.year, reverse=True)
-    files = (f for f in files if f.year in (1994, 2012, 2013))
-
     # Get all analyzed columns
     metadata = get_or_create_metadata(root)
     analysis = get_or_create_analysis(root)
+
+    # Decompose column analysis
+    if '--decompose' in sys.argv:
+        column = sys.argv[-1]
+        import pprint; pprint.pprint(analysis[column])
+        exit()
+
+    # Get files to process
+    files = sorted(get_files(root), key=lambda f: f.year, reverse=True)
+    files = (f for f in files if f.year in (1994, 2012, 2013))
+    # files = (f for f in files if f.year in (2013,))
+    # files = (f for f in files if f.root_name == 'prof')
+
+    # Update analysis
     for aeis_file in files:
         for column in analyze_columns(aeis_file, metadata=metadata):
             key = column['key']

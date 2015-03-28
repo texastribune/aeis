@@ -92,7 +92,7 @@ class AEISFile(object):
 
 
 def get_files(root):
-    pattern = os.path.join(root, '*', '*')
+    pattern = os.path.join(root, '[0-9]*', '*')
     for path in glob.iglob(pattern):
         base_name = os.path.basename(path)
         name, extension = os.path.splitext(base_name)

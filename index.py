@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import pprint
 import sys
 
@@ -9,61 +10,22 @@ from elasticsearch.helpers import streaming_bulk
 
 from aeis.analyzers import get_or_create_analysis
 from aeis.files import get_files
+from aeis.keys import get_cdc_code
+from aeis.logging import logger
 
+ES_HOST = os.environ.get('ES_HOST', 'localhost:9200')
 
-logging.basicConfig()
-logger = logging.getLogger('aeis')
-logger.setLevel(logging.INFO)
-
-
-# Keys
-CAMPUS = 'campus'
-DISTRICT = 'district'
-REGION = 'region'
-STATE = 'state'
-
-
-def get_cdc_code(record, level):
-    if level == STATE:
-        return 'state'
-
-    for key, value in record.items():
-        lower_key = key.lower()
-        if 'cdc' in lower_key:
-            return record[key]
-        elif level == CAMPUS == lower_key:
-            return record[key]
-        elif level == DISTRICT == lower_key:
-            return record[key]
-        elif level == REGION == lower_key:
-            return record[key]
-        elif level == REGION and lower_key == 'region_n':
-            return record[key]
-
-    raise ValueError(record)
-
-
-def get_documents(root):
+def get_documents(root, files):
     # Get all analyzed columns
     analysis = get_or_create_analysis(root)
     for aeis_file in files:
         logger.info(aeis_file)
-        if aeis_file.year < 2012:
-            continue
-        elif aeis_file.level == 'campus':
-            continue
-        elif (aeis_file.level == 'district'
-              and aeis_file.root_name in ('cad', 'comp',)
-                #'fin', 'othr', 'ref', 'staf', 'stud',
-                # 'taks1', 'taks2', 'taks3'
-        ):
-            continue
-
         for i, record in enumerate(aeis_file):
             key = get_cdc_code(record, level=aeis_file.level)
             for column, value in record.items():
                 # Build the document source
                 data = analysis[column]
+                data.pop('metadata', None)
                 column = data['key']
                 data = dict(
                     data,
@@ -71,12 +33,13 @@ def get_documents(root):
                     value=value,
                     column=column,
                     file=aeis_file.file_name,
+                    version=aeis_file.year
                 )
-                # logger.info(pprint.pformat(data))
+                # if 'level' not in data or data['level'] == 'campus':
+                #     logger.info(pprint.pformat(data))
 
                 # Build a globally unique ID
                 _id = '%s:%s:%d' % (key, column, aeis_file.year)
-                # logger.debug(id_)
 
                 # Yield the document as a bulk action
                 yield {
@@ -87,33 +50,41 @@ def get_documents(root):
                 }
 
 
-
 if __name__ == '__main__':
     root = sys.argv[1]
 
+    # Configure Elasticsearch index
+    es = Elasticsearch(ES_HOST)
+    indices = IndicesClient(es)
+
+    # Recreate index if necessary
+    if '--recreate' in sys.argv:
+        indices.delete('aeis')
+        indices.create(index='aeis', body={
+            'index': {
+                'mapping': {
+                    'ignore_malformed': True,
+                    'coerce': False
+                }
+            }
+        })
+
     # Get documents to index
     files = sorted(get_files(root), key=lambda f: f.year, reverse=False)
-    files = (f for f in files if f.year in (1994, 2012))
-    documents = get_documents(root)
+    files = (f for f in files if f.year in (1994, 2012, 2013))
+    files = (f for f in files if 'staar' not in f.root_name)
 
-    # Configure Elasticsearch index
-    es = Elasticsearch('http://54.200.56.1:9200')
-    indices = IndicesClient(es)
-    # indices.delete('aeis')
-    # indices.create(index='aeis', body={
-    #     'index': {
-    #         'mapping': {
-    #             'ignore_malformed': True,
-    #             'coerce': False
-    #         }
-    #     }
-    # })
+    # TESTING
+    # files = (f for f in files if f.year in (2013,))
+    # files = (f for f in files if 'taks' not in f.root_name)
+    # files = (f for f in files if 'prof' in f.root_name)
 
     # Index to Elasticsearch
+    documents = get_documents(root, files)
     for result in streaming_bulk(
         es,
         documents,
-        chunk_size=100,
+        chunk_size=300,
         raise_on_error=True
     ):
         pass

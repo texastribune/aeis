@@ -1,0 +1,253 @@
+Overview
+--------
+
+key
+name
+slug
+
+# the latest year of data for this entity
+year
+
+# the number of students enrolled
+enrollment
+
+# one or two paragraphs describing the entity
+description
+
+# campus only
+# from Campus.campus_type
+# {'elementary', 'middle', 'secondary', 'elementary-high'}
+campus_type
+grade_span
+
+# district and campus only
+accountability_rating
+
+# campus only
+# from Campus.campus_aea_flag
+is_alternative
+
+# campus only
+# from ASKTED report
+is_magnet
+
+# district and campus only
+# from campus_charter_flag
+is_charter
+
+# campus only
+# If the fourth number of the CDC code is an 8, then that
+# it is an open enrollment or college/university charter.
+# Otherwise, it is an in-district charter.
+# {'open-enrollment', 'in-district'}
+charter_type
+
+
+Organization
+------------
+
+# campus only
+district_code
+district_name
+
+# district and campus only
+region_name
+region_number
+region_numeral
+
+
+Geography
+---------
+
+city
+city_slug
+
+county_slug
+county_name
+
+# campus only
+latitude
+longitude
+
+# district only
+# TODO: combine into single GeoJSON object?
+shape
+
+api_data = JSONField(blank=True, null=True)
+
+
+Data
+----
+
+# from percent_of_staff_by_role
+
+
+# from dropout_rate
+
+
+# from graduation_rate_by_race
+
+
+# from graduation_plan_rate
+
+
+# from act_score
+
+
+# from completion_rate_by_race
+
+
+# from spending_by_function
+
+
+# from average_teacher_experience
+
+
+# from enrollment_by_grade_level
+
+
+# from advanced_courses_rate
+
+
+# from students_per_grade
+
+
+# from percent_of_teachers_by_demographic
+
+
+# from college_ready_graduates_rate
+college-admissions.college-ready
+    -
+
+
+# from percent_of_student_body_by_race
+
+
+# from spending_by_program
+
+
+# from percent_of_teachers_by_experience
+
+
+# from percent_of_student_body_by_risk_factor
+
+
+# from average_teacher_salary
+
+
+# from attendance_rate
+
+
+# from sat_score
+
+
+# from completion_rate
+
+
+
+
+
+PEIMS
+-----
+
+# from students_per_teacher
+
+
+# from total_enrollment_count
+
+
+# from campus_administration_school_leadership_count
+
+
+# from campus_administration_school_leadership_percent
+
+
+# from educational_aides_count
+
+
+# from educational_aides_percent
+
+
+# from professional_support_count
+
+
+# from professional_support_percent
+
+
+# from total_staff_count
+
+
+# from act_and_sat_percent_at_above_criteria
+
+
+# from advanced_course_dual_enrollment_completion
+
+
+# from ap_ib_percent_at_or_above_criterion
+
+
+# from ap_ib_percent_taking_tests
+
+
+# from college_ready_graduates_both_subjects
+
+
+# from mean_act
+
+
+# from mean_sat
+
+
+# from annual_dropped_out_4_year
+
+
+# from spending_by_function_instruction_per_pupil
+
+
+# from spending_by_function_total_operating_expenditures_per_pupil
+
+
+# from students_at_risk_percent
+
+
+# from students_early_childhood_education_percent
+
+
+# from students_economically_disadvantaged_percent
+
+
+# from students_limited_english_proficient_lep_percent
+
+
+# from students_w_disciplinary_placements_percent
+
+
+# from beginning_teachers_percent
+
+
+# from average_years_experience_of_teachers
+
+
+# from average_teacher_salary (average_actual_salary_teachers for campus)
+
+
+
+TAKS
+----
+
+# from all_passing_percentage
+
+
+# from all_commended_percentage
+
+
+
+
+AEIS
+----
+
+# from all_attendance_rate
+
+
+# from all_graduation_rate
+

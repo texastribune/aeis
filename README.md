@@ -18,6 +18,13 @@ To scrape and download all data from AEIS:
 To analyze the columns of the downloaded data:
 
     $ python analyze.py data --reload
+    $ ls analysis.shelf
+    $ ls metadata.shelf
+
+To index all data in ElasticSearch:
+
+    $ export ES_HOST=localhost:9200
+    $ python index.py data --recreate
 
 
 ### Next Steps

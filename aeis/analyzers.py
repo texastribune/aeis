@@ -1291,7 +1291,7 @@ def analyze_part1_2013(aeis_file):
     return {
         (r'(?P<group>\w)'
          r'(?P<participation>00|NA|NO|NT|YA|YM|YX)(?P<test>A)'
-         r'(?P<unknown>00T)'  # ???
+         r'(?P<signifier>00T)'  # ???
          r'(?P<year>013)'
          r'(?P<measure>R|N|D)'): ({
             'group': GROUP_CODES,
@@ -1305,7 +1305,9 @@ def analyze_part1_2013(aeis_file):
                 'YX': 'tested.excluded-under-rules',
             },
             'test': {'A': {'test': 'all'}},
-            'unknown': {'00T': {'grade': '3-11'}},
+            'signifier': {
+                '00T': {'field': 'staar.participation', 'grade': '3-11'},
+            },
             'year': parse_three_digit_year,
             'measure': {
                 'R': 'rate',
@@ -1634,7 +1636,7 @@ def get_or_create_metadata(root):
     metadata = shelve.open('metadata.shelf')
     aeis_files = list(get_files(root))
     for aeis_file in aeis_files:
-        if aeis_file.year < 2013: continue
+        # if aeis_file.year < 2013: continue
         for column in get_columns(aeis_file, metadata=metadata):
             pass
 
