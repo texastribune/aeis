@@ -21,6 +21,10 @@ To analyze the columns of the downloaded data:
     $ ls analysis.shelf
     $ ls metadata.shelf
 
+You should now be able to decompose any analyzed field into its metadata:
+
+    $ python analyze.py --decompose DH00A00T013R
+
 To index all data in ElasticSearch:
 
     $ export ES_HOST=localhost:9200
