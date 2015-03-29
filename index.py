@@ -71,12 +71,12 @@ if __name__ == '__main__':
     # Get documents to index
     files = sorted(get_files(root), key=lambda f: f.year, reverse=False)
     files = (f for f in files if f.year in (1994, 2012, 2013))
-    files = (f for f in files if 'staar' not in f.root_name)
 
     # TESTING
+    files = (f for f in files if 'staar' not in f.root_name)
     # files = (f for f in files if f.year in (2013,))
+    # files = (f for f in files if f.root_name in ('ref', 'prof'))
     # files = (f for f in files if 'taks' not in f.root_name)
-    # files = (f for f in files if 'prof' in f.root_name)
 
     # Index to Elasticsearch
     documents = get_documents(root, files)
